@@ -14,12 +14,12 @@ extension FileManager {
             return []
         }
 
-        return enumerator.compactMap({ element -> URL? in
+        return enumerator.compactMap { element -> URL? in
             guard let path = element as? String else {
                 return nil
             }
 
             return url.appendingPathComponent(path, isDirectory: false)
-        })
+        }
     }
 }

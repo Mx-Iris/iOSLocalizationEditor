@@ -12,28 +12,25 @@
 import AppKit
 import Foundation
 
-/**
- *  Localizable Protocol
- */
+///  Localizable Protocol
 protocol Localizable: AnyObject {
     /// The property that can be localized for each view, for example in a UILabel its the text, in a UIButton its the title, etc
+    /// 可以为每个视图本地化的属性，例如在UILabel中它是文本，在UIButton中它是标题，等等
     var localizableProperty: String? { get set }
 
     /// The localizable string value in the your localizable strings
+    /// 本地化字符串中的可本地化字符串的值
     var localizableString: String { get set }
 
-    /**
-     Applies the localizable string to the supported view attribute
-     */
+    /// Applies the localizable string to the supported view attribute
+    /// 将可本地化字符串应用于受支持的视图属性
     func applyLocalizableString(_ localizableString: String?)
 }
 
 extension Localizable {
-    /**
-     Applies the localizable string to the supported view attribute
-
-     - parameter localizableString: localizable String Value
-     */
+    /// Applies the localizable string to the supported view attribute
+    ///
+    /// - parameter localizableString: localizable String Value
     public func applyLocalizableString(_ localizableString: String?) {
         localizableProperty = localizableString?.localized
     }
@@ -41,7 +38,9 @@ extension Localizable {
 
 extension NSCell: Localizable {
     /// Not implemented in base class
-    @objc var localizableProperty: String? {
+    /// 无具体实现的基类
+    @objc
+    var localizableProperty: String? {
         get {
             return ""
         }
@@ -49,17 +48,16 @@ extension NSCell: Localizable {
     }
 
     /// Applies the localizable string to the localizable field of the supported view
-    @IBInspectable var localizableString: String {
+    @IBInspectable
+    var localizableString: String {
         get {
-            guard let text = self.localizableProperty else {
+            guard let text = localizableProperty else {
                 return ""
             }
             return text
         }
         set {
-            /**
-             *  Applys the localization to the property
-             */
+            ///  Applys the localization to the property
             applyLocalizableString(newValue)
         }
     }
@@ -67,7 +65,8 @@ extension NSCell: Localizable {
 
 extension NSMenuItem: Localizable {
     /// Not implemented in base class
-    @objc var localizableProperty: String? {
+    @objc
+    var localizableProperty: String? {
         get {
             return title
         }
@@ -77,17 +76,16 @@ extension NSMenuItem: Localizable {
     }
 
     /// Applies the localizable string to the localizable field of the supported view
-    @IBInspectable var localizableString: String {
+    @IBInspectable
+    var localizableString: String {
         get {
-            guard let text = self.localizableProperty else {
+            guard let text = localizableProperty else {
                 return ""
             }
             return text
         }
         set {
-            /**
-             *  Applys the localization to the property
-             */
+            ///  Applys the localization to the property
             applyLocalizableString(newValue)
         }
     }
@@ -99,7 +97,8 @@ extension NSMenuItem: Localizable {
 
 extension NSMenu {
     /// Not implemented in base class
-    @objc var localizableProperty: String? {
+    @objc
+    var localizableProperty: String? {
         get {
             return title
         }
@@ -109,17 +108,16 @@ extension NSMenu {
     }
 
     /// Applies the localizable string to the localizable field of the supported view
-    @IBInspectable var localizableString: String {
+    @IBInspectable
+    var localizableString: String {
         get {
-            guard let text = self.localizableProperty else {
+            guard let text = localizableProperty else {
                 return ""
             }
             return text
         }
         set {
-            /**
-             *  Applys the localization to the property
-             */
+            ///  Applys the localization to the property
             applyLocalizableString(newValue)
         }
     }
@@ -131,7 +129,8 @@ extension NSMenu {
 
 extension NSSearchField {
     /// Not implemented in base class
-    @objc var localizableProperty: String? {
+    @objc
+    var localizableProperty: String? {
         get {
             return placeholderString
         }
@@ -141,17 +140,16 @@ extension NSSearchField {
     }
 
     /// Applies the localizable string to the localizable field of the supported view
-    @IBInspectable var localizableString: String {
+    @IBInspectable
+    var localizableString: String {
         get {
-            guard let text = self.localizableProperty else {
+            guard let text = localizableProperty else {
                 return ""
             }
             return text
         }
         set {
-            /**
-             *  Applys the localization to the property
-             */
+            ///  Applys the localization to the property
             applyLocalizableString(newValue)
         }
     }
@@ -161,8 +159,8 @@ extension NSSearchField {
     }
 }
 
-extension NSTextFieldCell {
-    public override var localizableProperty: String? {
+public extension NSTextFieldCell {
+    override var localizableProperty: String? {
         get {
             return title
         }
@@ -172,8 +170,8 @@ extension NSTextFieldCell {
     }
 }
 
-extension NSButtonCell {
-    public override var localizableProperty: String? {
+public extension NSButtonCell {
+    override var localizableProperty: String? {
         get {
             return title
         }
@@ -183,8 +181,8 @@ extension NSButtonCell {
     }
 }
 
-extension NSPopUpButtonCell {
-    public override var localizableProperty: String? {
+public extension NSPopUpButtonCell {
+    override var localizableProperty: String? {
         get {
             return title
         }

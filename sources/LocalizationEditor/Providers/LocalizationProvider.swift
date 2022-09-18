@@ -9,24 +9,19 @@
 import Foundation
 import os
 
-/**
-Service for working with the strings files
- */
+/// Service for working with the strings files
+///
 final class LocalizationProvider {
-    /**
-     List of folder that should be ignored when searching for localization files
-     */
+    /// List of folder that should be ignored when searching for localization files
     private let ignoredDirectories: Set<String> = ["Pods/", "Carthage/", "build/", ".framework"]
 
     // MARK: Actions
 
-    /**
-     Updates given localization values in given localization file. Basially regenerates the whole localization files changing the given value
-
-     - Parameter localization: localization to update
-     - Parameter key: localization string key
-     - Parameter value: new value for the localization string
-     */
+    /// Updates given localization values in given localization file. Basially regenerates the whole localization files changing the given value
+    ///
+    /// - Parameter localization: localization to update
+    /// - Parameter key: localization string key
+    /// - Parameter value: new value for the localization string
     func updateLocalization(localization: Localization, key: String, with value: String, message: String?) {
         if let existing = localization.translations.first(where: { $0.key == key }), existing.value == value, existing.message == message {
             os_log("Same value provided for %@, not updating", type: OSLogType.debug, existing.description)
@@ -40,12 +35,10 @@ final class LocalizationProvider {
         writeToFile(localization: localization)
     }
 
-    /**
-     Writes given translations to a file at given path
-
-     - Parameter translatins: trabslations to write
-     - Parameter path: file path
-     */
+    /// Writes given translations to a file at given path
+    ///
+    /// - Parameter translatins: trabslations to write
+    /// - Parameter path: file path
     private func writeToFile(localization: Localization) {
         let data = localization.translations.map { string -> String in
             let stringForMessage: String
@@ -71,65 +64,81 @@ final class LocalizationProvider {
         }
     }
 
-    /**
-     Deletes key from given localization
-
-     - Parameter localization: localization to update
-     - Parameter key: key to delete
-     */
+    /// Deletes key from given localization
+    ///
+    /// - Parameter localization: localization to update
+    /// - Parameter key: key to delete
     func deleteKeyFromLocalization(localization: Localization, key: String) {
         localization.remove(key: key)
         writeToFile(localization: localization)
     }
 
-    /**
-     Adds new key with a message to given localization
-
-     - Parameter localization: localization to add the data to
-     - Parameter key: new key to add
-     - Parameter message: message for the key
-
-     - Returns: new localization string
-     */
+    /// Adds new key with a message to given localization
+    ///
+    /// - Parameter localization: localization to add the data to
+    /// - Parameter key: new key to add
+    /// - Parameter message: message for the key
+    ///
+    /// - Returns: new localization string
     func addKeyToLocalization(localization: Localization, key: String, message: String?) -> LocalizationString {
         let newTranslation = localization.add(key: key, message: message)
         writeToFile(localization: localization)
         return newTranslation
     }
 
-    /**
-     Finds and constructs localiations for given directory path
-
-     - Parameter url: directory URL to start the search
-     - Returns: list of localization groups
-     */
+    /// Finds and constructs localiations for given directory path
+    /// 查找并构造给定目录路径的位置
+    /// - Parameter url: directory URL to start the search
+    /// - Returns: list of localization groups
     func getLocalizations(url: URL) -> [LocalizationGroup] {
         os_log("Searching %@ for Localizable.strings", type: OSLogType.debug, url.description)
+        // e.g
+        // "/Volumes/Code/Private/Work/Diary/JHDiary/Calendar.strings" =     (
+        //    "/Volumes/Code/Private/Work/Diary/JHDiary/zh-Hans.lproj/Calendar.strings",
+        //    "/Volumes/Code/Private/Work/Diary/JHDiary/en.lproj/Calendar.strings"
+        // );
 
-        let localizationFiles = Dictionary(grouping: FileManager.default.getAllFilesRecursively(url: url).filter { file in
-            file.pathExtension == "strings" && !ignoredDirectories.contains(where: { file.path.contains($0) })
-        }, by: { $0.path.components(separatedBy: "/").filter({ !$0.hasSuffix(".lproj") }).joined(separator: "/") })
+        let localizationFiles = Dictionary(
+            grouping: FileManager.default.getAllFilesRecursively(url: url).filter { file in
+                file.pathExtension == "strings" && !ignoredDirectories.contains(where: { file.path.contains($0) })
+            },
+            by: {
+                $0.path.components(separatedBy: "/").filter { !$0.hasSuffix(".lproj") }.joined(separator: "/")
+            }
+        )
 
         os_log("Found %d localization files", type: OSLogType.info, localizationFiles.count)
 
-        return localizationFiles.map({ path, files in
+        return localizationFiles.map { path, files in
             let name = URL(fileURLWithPath: path).lastPathComponent
-            return LocalizationGroup(name: name, localizations: files.map({ file in
-                let parts = file.path.split(separator: "/")
-                let lang = String(parts[parts.count - 2]).replacingOccurrences(of: ".lproj", with: "")
-                return Localization(language: lang, translations: getLocalizationStrings(path: file.path), path: file.path)
-            }).sorted(by: { $0.language < $1.language }), path: path)
-        }).sorted()
+            // e.g
+            // name:  Calendar.strings
+            // parts: ["Volumes", "Code", "Private", "Work", "Diary", "JHDiary", "zh-Hans.lproj", "Calendar.strings"]
+            // lang:  zh-Hans
+            // parts: ["Volumes", "Code", "Private", "Work", "Diary", "JHDiary", "en.lproj", "Calendar.strings"]
+            // lang:  en
+            return LocalizationGroup(
+                name: name,
+                localizations: files.map { file in
+                    let parts = file.path.split(separator: "/")
+                    let lang = String(parts[parts.count - 2]).replacingOccurrences(of: ".lproj", with: "")
+                    return Localization(
+                        language: lang,
+                        translations: getLocalizationStrings(path: file.path),
+                        path: file.path
+                    )
+                }.sorted { $0.language < $1.language },
+                path: path
+            )
+        }.sorted()
     }
 
     // MARK: Internal implementation
 
-    /**
-     Reads given strings file and constructs an array of localization strings from it
-
-     - Parameter path: strings file path
-     - Returns: array of localization strings
-     */
+    /// Reads given strings file and constructs an array of localization strings from it
+    /// 读取给定字符串文件并从中构造本地化字符串数组
+    /// - Parameter path: strings file path
+    /// - Returns: array of localization strings
     private func getLocalizationStrings(path: String) -> [LocalizationString] {
         do {
             let contentOfFileAsString = try String(contentsOfFile: path)

@@ -8,23 +8,16 @@
 
 import Cocoa
 
-/**
-Protocol for announcing changes to the toolbar. Needed because the VC does not have direct access to the toolbar (handled by WindowController)
- */
+/// Protocol for announcing changes to the toolbar. Needed because the VC does not have direct access to the toolbar (handled by WindowController)
+///
 protocol ViewControllerDelegate: AnyObject {
-    /**
-     Invoked when localization groups should be set in the toolbar's dropdown list
-     */
+    /// Invoked when localization groups should be set in the toolbar's dropdown list
     func shouldSetLocalizationGroups(groups: [LocalizationGroup])
 
-    /**
-     Invoiked when search and filter should be reset in the toolbar
-     */
+    /// Invoiked when search and filter should be reset in the toolbar
     func shouldResetSearchTermAndFilter()
 
-    /**
-     Invoked when localization group should be selected in the toolbar's dropdown list
-     */
+    /// Invoked when localization group should be selected in the toolbar's dropdown list
     func shouldSelectLocalizationGroup(title: String)
 }
 
@@ -36,17 +29,22 @@ final class ViewController: NSViewController {
 
     // MARK: - Outlets
 
-    @IBOutlet private weak var tableView: NSTableView!
-    @IBOutlet private weak var progressIndicator: NSProgressIndicator!
+    @IBOutlet
+    private var tableView: NSTableView!
+    @IBOutlet
+    private var progressIndicator: NSProgressIndicator!
 
     // MARK: - Properties
 
     weak var delegate: ViewControllerDelegate?
 
+    /// 当前的过滤器
     private var currentFilter: Filter = .all
+    /// 当前的搜索词
     private var currentSearchTerm: String = ""
     private let dataSource = LocalizationsDataSource()
     private var presendedAddViewController: AddViewController?
+    /// 当前打开的文件夹的URL
     private var currentOpenFolderUrl: URL?
 
     override func viewDidLoad() {
@@ -80,7 +78,7 @@ final class ViewController: NSViewController {
             view.window?.title = appName
             view.window?.subtitle = title ?? ""
         } else {
-            view.window?.title = title.flatMap({ "\(appName) [\($0)]" }) ?? appName
+            view.window?.title = title.flatMap { "\(appName) [\($0)]" } ?? appName
         }
 
         let columns = tableView.tableColumns
@@ -89,6 +87,7 @@ final class ViewController: NSViewController {
         }
 
         // not sure why this is needed but without it autolayout crashes and the whole tableview breaks visually
+        // 不知道为什么这是必要的，但没有它，自动布局崩溃和整个表视图样式被破坏
         tableView.reloadData()
 
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(FixedColumn.key.rawValue))
@@ -127,8 +126,8 @@ final class ViewController: NSViewController {
     }
 
     private func handleOpenFolder(_ url: URL) {
-        self.progressIndicator.startAnimation(self)
-        self.dataSource.load(folder: url) { [unowned self] languages, title, localizationFiles in
+        progressIndicator.startAnimation(self)
+        dataSource.load(folder: url) { [unowned self] languages, title, localizationFiles in
             self.currentOpenFolderUrl = url
             self.reloadData(with: languages, title: title)
             self.progressIndicator.stopAnimation(self)
@@ -151,7 +150,7 @@ final class ViewController: NSViewController {
         openPanel.canChooseDirectories = true
         openPanel.canCreateDirectories = true
         openPanel.canChooseFiles = false
-        openPanel.begin { result -> Void in
+        openPanel.begin { result in
             guard result.rawValue == NSApplication.ModalResponse.OK.rawValue, let url = openPanel.url else {
                 return
             }
@@ -214,9 +213,7 @@ extension ViewController: ActionsCellDelegate {
 // MARK: - WindowControllerToolbarDelegate
 
 extension ViewController: WindowControllerToolbarDelegate {
-    /**
-     Invoked when user requests adding a new translation
-     */
+    /// Invoked when user requests adding a new translation
     func userDidRequestAddNewTranslation() {
         let addViewController = storyboard!.instantiateController(withIdentifier: "Add") as! AddViewController
         addViewController.delegate = self
@@ -224,11 +221,9 @@ extension ViewController: WindowControllerToolbarDelegate {
         presentAsSheet(addViewController)
     }
 
-    /**
-     Invoked when user requests filter change
-
-     - Parameter filter: new filter setting
-     */
+    /// Invoked when user requests filter change
+    ///
+    /// - Parameter filter: new filter setting
     func userDidRequestFilterChange(filter: Filter) {
         guard currentFilter != filter else {
             return
@@ -238,11 +233,9 @@ extension ViewController: WindowControllerToolbarDelegate {
         self.filter()
     }
 
-    /**
-     Invoked when user requests searching
-
-     - Parameter searchTerm: new search term
-     */
+    /// Invoked when user requests searching
+    ///
+    /// - Parameter searchTerm: new search term
     func userDidRequestSearch(searchTerm: String) {
         guard currentSearchTerm != searchTerm else {
             return
@@ -252,39 +245,30 @@ extension ViewController: WindowControllerToolbarDelegate {
         filter()
     }
 
-    /**
-     Invoked when user request change of the selected localization group
-
-     - Parameter group: new localization group title
-     */
+    /// Invoked when user request change of the selected localization group
+    ///
+    /// - Parameter group: new localization group title
     func userDidRequestLocalizationGroupChange(group: String) {
         let languages = dataSource.selectGroupAndGetLanguages(for: group)
         reloadData(with: languages, title: group)
     }
 
-    /**
-     Invoked when user requests opening a folder
-     */
+    /// Invoked when user requests opening a folder
     func userDidRequestFolderOpen() {
         openFolder()
     }
 
-    /**
-     Invoked when user requests opening a folder for specific path
-     */
+    /// Invoked when user requests opening a folder for specific path
     func userDidRequestFolderOpen(withPath path: String) {
         openFolder(forPath: path)
     }
 
-    /**
-     Invoked when user requests reload selected folder
-     */
+    /// Invoked when user requests reload selected folder
     func userDidRequestReloadData() {
         guard let currentOpenFolderUrl = currentOpenFolderUrl else {
             return
         }
         handleOpenFolder(currentOpenFolderUrl)
-
     }
 }
 

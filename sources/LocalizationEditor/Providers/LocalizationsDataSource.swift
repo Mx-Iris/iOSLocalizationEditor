@@ -26,9 +26,7 @@ enum Filter: Int, CaseIterable, CustomStringConvertible {
     }
 }
 
-/**
- Data source for the NSTableView with localizations
- */
+/// Data source for the NSTableView with localizations
 final class LocalizationsDataSource: NSObject {
     // MARK: - Properties
 
@@ -38,28 +36,25 @@ final class LocalizationsDataSource: NSObject {
     private var languagesCount = 0
     private var mainLocalization: Localization?
 
-    /**
-     Dictionary indexed by localization key on the first level and by language on the second level for easier access
-     */
+    /// Dictionary indexed by localization key on the first level and by language on the second level for easier access
+    /// Dictionary 在第一级按本地化key索引，在第二级按语言索引，以便于访问
     private var data: [String: [String: LocalizationString?]] = [:]
 
-    /**
-     Keys for the consumer. Depend on applied filter.
-     */
+    /// Keys for the consumer. Depend on applied filter.
     private var filteredKeys: [String] = []
 
     // MARK: - Actions
 
-    /**
-     Loads data for directory at given path
-
-     - Parameter folder: directory path to start the search
-     - Parameter onCompletion: callback with data
-     */
+    /// Loads data for directory at given path
+    /// 为给定路径的目录加载数据
+    /// - Parameter folder: directory path to start the search （开始搜索的目录路径）
+    /// - Parameter onCompletion: callback with data （完成时的回掉，会传入加载完毕的数据）
     func load(folder: URL, onCompletion: @escaping (LocalizationsDataSourceData) -> Void) {
         DispatchQueue.global(qos: .background).async {
             let localizationGroups = self.localizationProvider.getLocalizations(url: folder)
-            guard localizationGroups.count > 0, let group = localizationGroups.first(where: { $0.name == "Localizable.strings" }) ?? localizationGroups.first else {
+            guard localizationGroups.count > 0,
+                  let group = localizationGroups.first(where: { $0.name == "Localizable.strings" }) ?? localizationGroups.first
+            else {
                 os_log("No localization data found", type: OSLogType.error)
                 DispatchQueue.main.async {
                     onCompletion(([], nil, []))
@@ -76,12 +71,10 @@ final class LocalizationsDataSource: NSObject {
         }
     }
 
-    /**
-     Selects given localization group, converting its data to a more usable form and returning an array of available languages
-
-     - Parameter group: group to select
-     - Returns: an array of available languages
-     */
+    /// Selects given localization group, converting its data to a more usable form and returning an array of available languages
+    /// 选择给定的`LocalizationGroup`，将其数据转换为更可用的形式并返回可用语言的数组
+    /// - Parameter group: group to select（选择的group）
+    /// - Returns: an array of available languages （包含可用的语言的数组）
     private func select(group: LocalizationGroup) -> [String] {
         selectedLocalizationGroup = group
 
@@ -110,37 +103,33 @@ final class LocalizationsDataSource: NSObject {
         // making sure filteredKeys are computed
         filter(by: Filter.all, searchString: nil)
 
-        return localizations.map({ $0.language })
+        return localizations.map { $0.language }
     }
 
-    /**
-     Selects given group and gets available languages
-
-     - Parameter group: group name
-     - Returns: array of languages
-     */
+    /// Selects given group and gets available languages
+    ///
+    /// - Parameter group: group name
+    /// - Returns: array of languages
     func selectGroupAndGetLanguages(for group: String) -> [String] {
         let group = localizationGroups.first(where: { $0.name == group })!
         let languages = select(group: group)
         return languages
     }
 
-    /**
-     Filters the data by given filter and search string. Empty search string means all data us included.
-
-     Filtering is done by setting the filteredKeys property. A key is included if it matches the search string or any of its translations matches.
-     */
+    /// Filters the data by given filter and search string. Empty search string means all data us included.
+    ///
+    /// Filtering is done by setting the filteredKeys property. A key is included if it matches the search string or any of its translations matches.
     func filter(by filter: Filter, searchString: String?) {
         os_log("Filtering by %@", type: OSLogType.debug, "\(filter)")
 
         // first use filter, missing translation is a translation that is missing in any language for the given key
-        let data = filter == .all ? self.data: self.data.filter({ dict in
-            return dict.value.keys.count != self.languagesCount || !dict.value.values.allSatisfy({ $0?.value.isEmpty == false })
-        })
+        let data = filter == .all ? self.data : self.data.filter { dict in
+            dict.value.keys.count != self.languagesCount || !dict.value.values.allSatisfy { $0?.value.isEmpty == false }
+        }
 
         // no search string, just use teh filtered data
         guard let searchString = searchString, !searchString.isEmpty else {
-            filteredKeys = data.keys.map({ $0 }).sorted(by: { $0<$1 })
+            filteredKeys = data.keys.map { $0 }.sorted(by: { $0 < $1 })
             return
         }
 
@@ -161,25 +150,21 @@ final class LocalizationsDataSource: NSObject {
         }
 
         // sorting because the dictionary does not keep the sort
-        filteredKeys = keys.sorted(by: { $0<$1 })
+        filteredKeys = keys.sorted(by: { $0 < $1 })
     }
 
-    /**
-     Gets key for speficied row
-
-     - Parameter row: row number
-     - Returns: key if valid
-     */
+    /// Gets key for speficied row
+    ///
+    /// - Parameter row: row number
+    /// - Returns: key if valid
     func getKey(row: Int) -> String? {
         return row < filteredKeys.count ? filteredKeys[row] : nil
     }
 
-    /**
-     Gets the message for specified row
-
-     - Parameter row: row number
-     - Returns: message if any
-     */
+    /// Gets the message for specified row
+    ///
+    /// - Parameter row: row number
+    /// - Returns: message if any
     func getMessage(row: Int) -> String? {
         guard let key = getKey(row: row), let part = data[key], let languageKey = mainLocalization?.language else {
             return nil
@@ -187,13 +172,11 @@ final class LocalizationsDataSource: NSObject {
         return part[languageKey]??.message
     }
 
-    /**
-     Gets localization for specified language and row. The language should be always valid. The localization might be missing, returning it with empty value in that case
-
-     - Parameter language: language to get the localization for
-     - Parameter row: row number
-     - Returns: localization string
-     */
+    /// Gets localization for specified language and row. The language should be always valid. The localization might be missing, returning it with empty value in that case
+    ///
+    /// - Parameter language: language to get the localization for
+    /// - Parameter row: row number
+    /// - Returns: localization string
     func getLocalization(language: String, row: Int) -> LocalizationString {
         guard let key = getKey(row: row) else {
             // should not happen but you never know
@@ -207,13 +190,11 @@ final class LocalizationsDataSource: NSObject {
         return localization
     }
 
-    /**
-     Updates given localization values in given language
-
-     - Parameter language: language to update
-     - Parameter key: localization string key
-     - Parameter value: new value for the localization string
-     */
+    /// Updates given localization values in given language
+    ///
+    /// - Parameter language: language to update
+    /// - Parameter key: localization string key
+    /// - Parameter value: new value for the localization string
     func updateLocalization(language: String, key: String, with value: String, message: String?) {
         guard let localization = selectedLocalizationGroup?.localizations.first(where: { $0.language == language }) else {
             return
@@ -221,34 +202,30 @@ final class LocalizationsDataSource: NSObject {
         localizationProvider.updateLocalization(localization: localization, key: key, with: value, message: message)
     }
 
-    /**
-     Deletes given key from all the localizations
-
-     - Parameter key: key to delete
-     */
+    /// Deletes given key from all the localizations
+    ///
+    /// - Parameter key: key to delete
     func deleteLocalization(key: String) {
         guard let selectedLocalizationGroup = selectedLocalizationGroup else {
             return
         }
 
-        selectedLocalizationGroup.localizations.forEach({ localization in
+        selectedLocalizationGroup.localizations.forEach { localization in
             self.localizationProvider.deleteKeyFromLocalization(localization: localization, key: key)
-        })
+        }
         data.removeValue(forKey: key)
     }
 
-    /**
-     Adds new localization key with a message to all the localizations
-
-     - Parameter key: key to add
-     - Parameter message: message (optional)
-     */
+    /// Adds new localization key with a message to all the localizations
+    ///
+    /// - Parameter key: key to add
+    /// - Parameter message: message (optional)
     func addLocalizationKey(key: String, message: String?) {
         guard let selectedLocalizationGroup = selectedLocalizationGroup else {
             return
         }
 
-        selectedLocalizationGroup.localizations.forEach({ localization in
+        selectedLocalizationGroup.localizations.forEach { localization in
             let newTranslation = localizationProvider.addKeyToLocalization(localization: localization, key: key, message: message)
             // If we already created the entry in the data dict, do not overwrite the entry entirely.
             // Instead just add the data to the already present entry.
@@ -257,16 +234,14 @@ final class LocalizationsDataSource: NSObject {
             } else {
                 data[key] = [localization.language: newTranslation]
             }
-        })
+        }
     }
 
-    /**
-     Returns row number for given key
-
-     - Parameter key: key to check
-
-     - Returns: row number (if any)
-     */
+    /// Returns row number for given key
+    ///
+    /// - Parameter key: key to check
+    ///
+    /// - Returns: row number (if any)
     func getRowForKey(key: String) -> Int? {
         return filteredKeys.firstIndex(of: key)
     }
