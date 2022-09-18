@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 48;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -13,6 +13,9 @@
 		A15A5A4221D908C400D3C791 /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15A5A4121D908C400D3C791 /* Parser.swift */; };
 		A15A5A4721D90AC600D3C791 /* ParserIsolationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15A5A4521D90AC600D3C791 /* ParserIsolationTests.swift */; };
 		A15A5A4921DA249400D3C791 /* ParserTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15A5A4821DA249400D3C791 /* ParserTypes.swift */; };
+		E9A67F9F28D74E770089BA01 /* Collections in Frameworks */ = {isa = PBXBuildFile; productRef = E9A67F9E28D74E770089BA01 /* Collections */; };
+		E9A67FA128D74E770089BA01 /* DequeModule in Frameworks */ = {isa = PBXBuildFile; productRef = E9A67FA028D74E770089BA01 /* DequeModule */; };
+		E9A67FA328D74E770089BA01 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = E9A67FA228D74E770089BA01 /* OrderedCollections */; };
 		F31FA2072231025C00E20A3F /* Flag.swift in Sources */ = {isa = PBXBuildFile; fileRef = F31FA2062231025C00E20A3F /* Flag.swift */; };
 		F3261F64222EA955006838C3 /* ActionsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3261F63222EA955006838C3 /* ActionsCell.swift */; };
 		F3261F66222EA9BF006838C3 /* ActionsCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = F3261F65222EA9BF006838C3 /* ActionsCell.xib */; };
@@ -142,6 +145,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E9A67F9F28D74E770089BA01 /* Collections in Frameworks */,
+				E9A67FA128D74E770089BA01 /* DequeModule in Frameworks */,
+				E9A67FA328D74E770089BA01 /* OrderedCollections in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -323,6 +329,11 @@
 			dependencies = (
 			);
 			name = LocalizationEditor;
+			packageProductDependencies = (
+				E9A67F9E28D74E770089BA01 /* Collections */,
+				E9A67FA028D74E770089BA01 /* DequeModule */,
+				E9A67FA228D74E770089BA01 /* OrderedCollections */,
+			);
 			productName = LocalizationEditor;
 			productReference = F3D9C94220BEC7460081830A /* LocalizationEditor.app */;
 			productType = "com.apple.product-type.application";
@@ -384,6 +395,9 @@
 				ja,
 			);
 			mainGroup = F3D9C93920BEC7460081830A;
+			packageReferences = (
+				E9A67F9D28D74E770089BA01 /* XCRemoteSwiftPackageReference "swift-collections" */,
+			);
 			productRefGroup = F3D9C94320BEC7460081830A /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -652,7 +666,8 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
-				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
 			name = Release;
 		};
@@ -667,7 +682,10 @@
 				DEVELOPMENT_TEAM = D5Q73692VW;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = LocalizationEditor/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				MARKETING_VERSION = 2.9;
 				PRODUCT_BUNDLE_IDENTIFIER = develop.JH.LocalizationEditor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -686,7 +704,10 @@
 				DEVELOPMENT_TEAM = D5Q73692VW;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = LocalizationEditor/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
 				MARKETING_VERSION = 2.9;
 				PRODUCT_BUNDLE_IDENTIFIER = develop.JH.LocalizationEditor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -703,7 +724,11 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = D5Q73692VW;
 				INFOPLIST_FILE = LocalizationEditorTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = sk.kulman.LocalizationEditorTests;
@@ -722,7 +747,11 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = D5Q73692VW;
 				INFOPLIST_FILE = LocalizationEditorTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = sk.kulman.LocalizationEditorTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -762,6 +791,35 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E9A67F9D28D74E770089BA01 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-collections.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E9A67F9E28D74E770089BA01 /* Collections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E9A67F9D28D74E770089BA01 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = Collections;
+		};
+		E9A67FA028D74E770089BA01 /* DequeModule */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E9A67F9D28D74E770089BA01 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = DequeModule;
+		};
+		E9A67FA228D74E770089BA01 /* OrderedCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E9A67F9D28D74E770089BA01 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = OrderedCollections;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F3D9C93A20BEC7460081830A /* Project object */;
 }

@@ -9,6 +9,7 @@
 import Cocoa
 import Foundation
 import os
+import OrderedCollections
 
 typealias LocalizationsDataSourceData = ([String], String?, [LocalizationGroup])
 
@@ -38,8 +39,7 @@ final class LocalizationsDataSource: NSObject {
 
     /// Dictionary indexed by localization key on the first level and by language on the second level for easier access
     /// Dictionary 在第一级按本地化key索引，在第二级按语言索引，以便于访问
-    private var data: [String: [String: LocalizationString?]] = [:]
-
+    private var data: OrderedDictionary<String, OrderedDictionary<String, LocalizationString?>> = [:]
     /// Keys for the consumer. Depend on applied filter.
     private var filteredKeys: [String] = []
 
@@ -78,17 +78,18 @@ final class LocalizationsDataSource: NSObject {
     private func select(group: LocalizationGroup) -> [String] {
         selectedLocalizationGroup = group
 
-        let localizations = group.localizations.sorted(by: { lhs, rhs in
-            if lhs.language.lowercased() == "base" {
-                return true
-            }
+        let localizations = group.localizations
+            .sorted { lhs, rhs in
+                if lhs.language.lowercased() == "base" {
+                    return true
+                }
 
-            if rhs.language.lowercased() == "base" {
-                return false
-            }
+                if rhs.language.lowercased() == "base" {
+                    return false
+                }
 
-            return lhs.translations.count > rhs.translations.count
-        })
+                return lhs.translations.count > rhs.translations.count
+            }
         mainLocalization = localizations.first
         languagesCount = localizations.count
 
@@ -129,7 +130,7 @@ final class LocalizationsDataSource: NSObject {
 
         // no search string, just use teh filtered data
         guard let searchString = searchString, !searchString.isEmpty else {
-            filteredKeys = data.keys.map { $0 }.sorted(by: { $0 < $1 })
+            filteredKeys = data.keys.map { $0 }
             return
         }
 
@@ -149,8 +150,7 @@ final class LocalizationsDataSource: NSObject {
             }
         }
 
-        // sorting because the dictionary does not keep the sort
-        filteredKeys = keys.sorted(by: { $0 < $1 })
+        filteredKeys = keys
     }
 
     /// Gets key for speficied row

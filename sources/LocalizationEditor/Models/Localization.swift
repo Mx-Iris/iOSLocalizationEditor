@@ -8,9 +8,8 @@
 
 import Foundation
 
-/**
-Complete localization for a single language. Represents a single strings file for a single language
- */
+/// Complete localization for a single language. Represents a single strings file for a single language
+///
 final class Localization {
     let language: String
     private(set) var translations: [LocalizationString]
@@ -29,17 +28,17 @@ final class Localization {
         }
 
         let newTranslation = LocalizationString(key: key, value: value, message: message)
-        translations = (translations + [newTranslation]).sorted()
+        translations = (translations + [newTranslation])
     }
 
     func add(key: String, message: String?) -> LocalizationString {
         let newTranslation = LocalizationString(key: key, value: "", message: message)
-        translations = (translations.filter({ $0.key != key }) + [newTranslation]).sorted()
+        translations = (translations.filter { $0.key != key } + [newTranslation])
         return newTranslation
     }
 
     func remove(key: String) {
-        translations = translations.filter({ $0.key != key })
+        translations = translations.filter { $0.key != key }
     }
 }
 

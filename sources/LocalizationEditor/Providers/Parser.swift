@@ -359,6 +359,7 @@ class Parser {
     }
 
     /// This function finds the next control character and returns it. If no new control character can be found, it returns nil (signaling that the input does not contain any valuable information anymore).
+    /// 此函数查找下一个控制字符并返回它。如果找不到新的控制字符，则返回nil(表示输入不再包含任何有价值的信息)。
     ///
     /// - Parameter shouldExtract: A flag that determies whether the found control character should also be removed from the input string.
     /// - Returns: The next control character or nil if the input string does not contain any valuable information.

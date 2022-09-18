@@ -52,8 +52,10 @@ final class LocalizationProvider {
             \(stringForMessage)
             \"\(string.key)\" = \"\(string.value.escaped)\";\n
             """
+
         }.reduce("") { prev, next in
-            "\(prev)\n\(next)"
+//            "\(prev)\n\(next)"
+            prev + next
         }
 
         do {
@@ -93,10 +95,11 @@ final class LocalizationProvider {
     func getLocalizations(url: URL) -> [LocalizationGroup] {
         os_log("Searching %@ for Localizable.strings", type: OSLogType.debug, url.description)
         // e.g
-        // "/Volumes/Code/Private/Work/Diary/JHDiary/Calendar.strings" =     (
-        //    "/Volumes/Code/Private/Work/Diary/JHDiary/zh-Hans.lproj/Calendar.strings",
-        //    "/Volumes/Code/Private/Work/Diary/JHDiary/en.lproj/Calendar.strings"
-        // );
+        //
+        // key:   "/Volumes/Code/Private/Work/Diary/JHDiary/Calendar.strings"
+        //
+        // value: "/Volumes/Code/Private/Work/Diary/JHDiary/zh-Hans.lproj/Calendar.strings",
+        //        "/Volumes/Code/Private/Work/Diary/JHDiary/en.lproj/Calendar.strings"
 
         let localizationFiles = Dictionary(
             grouping: FileManager.default.getAllFilesRecursively(url: url).filter { file in
@@ -145,7 +148,7 @@ final class LocalizationProvider {
             let parser = Parser(input: contentOfFileAsString)
             let localizationStrings = try parser.parse()
             os_log("Found %d keys for in %@ using built-in parser.", type: OSLogType.debug, localizationStrings.count, path.description)
-            return localizationStrings.sorted()
+            return localizationStrings
         } catch {
             // The parser could not parse the input. Fallback to NSDictionary
             os_log("Could not parse %@ as String", type: OSLogType.error, path.description)
@@ -156,7 +159,7 @@ final class LocalizationProvider {
                     localizationStrings.append(localizationString)
                 }
                 os_log("Found %d keys for in %@.", type: OSLogType.debug, localizationStrings.count, path.description)
-                return localizationStrings.sorted()
+                return localizationStrings
             } else {
                 os_log("Could not parse %@ as dictionary.", type: OSLogType.error, path.description)
                 return []
