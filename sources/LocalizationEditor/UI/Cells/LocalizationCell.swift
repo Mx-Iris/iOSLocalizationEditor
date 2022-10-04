@@ -7,19 +7,20 @@
 //
 
 import Cocoa
+import Models
+import Utils
 
 protocol LocalizationCellDelegate: AnyObject {
-    func userDidUpdateLocalizationString(language: String, key: String, with value: String, message: String?)
+    func userDidUpdateLocalizationString(language: String, key: String, with value: String, message: String?, willUpdate: Closure?, didUpdate: Closure?)
 }
 
 final class LocalizationCell: NSTableCellView {
     // MARK: - Outlets
 
-    @IBOutlet private weak var valueTextField: NSTextField!
+    @IBOutlet
+    private var valueTextField: NSTextField!
 
     // MARK: - Properties
-
-    static let identifier = "LocalizationCell"
 
     weak var delegate: LocalizationCellDelegate?
 
@@ -45,9 +46,7 @@ final class LocalizationCell: NSTableCellView {
         valueTextField.layer?.cornerRadius = 0.0
     }
 
-    /**
-     Focues the cell by activating the NSTextField, making sure there is no selection and cursor is moved to the end
-     */
+    /// Focues the cell by activating the NSTextField, making sure there is no selection and cursor is moved to the end
     func focus() {
         valueTextField?.becomeFirstResponder()
         valueTextField?.currentEditor()?.selectedRange = NSRange(location: 0, length: 0)
@@ -59,11 +58,25 @@ final class LocalizationCell: NSTableCellView {
 
 extension LocalizationCell: NSTextFieldDelegate {
     func controlTextDidEndEditing(_: Notification) {
-        guard let language = language, let value = value else {
-            return
-        }
+        update(newValue: valueTextField.stringValue)
+    }
+
+    func update(newValue: String) {
+        guard let language = language, let localizationString = value else { return }
 
         setStateUI()
-        delegate?.userDidUpdateLocalizationString(language: language, key: value.key, with: valueTextField.stringValue, message: value.message)
+        let oldValue = value?.value
+        delegate?.userDidUpdateLocalizationString(language: language, key: localizationString.key, with: newValue, message: localizationString.message) {
+            self.undoManager?.registerUndo(withTarget: self) { target in
+                guard let oldValue = oldValue else { return }
+                print(oldValue, newValue)
+                target.update(newValue: oldValue)
+            }
+        } didUpdate: {
+            self.value?.update(newValue: newValue)
+        }
+
+        valueTextField.stringValue = newValue
+        setStateUI()
     }
 }

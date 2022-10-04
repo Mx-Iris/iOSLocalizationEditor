@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import Utils
 
 protocol ActionsCellDelegate: AnyObject {
     func userDidRequestRemoval(of key: String)
@@ -18,8 +19,6 @@ final class ActionsCell: NSTableCellView {
     @IBOutlet private weak var deleteButton: NSButton!
 
     // MARK: - Properties
-
-    static let identifier = "ActionsCell"
 
     var key: String?
     weak var delegate: ActionsCellDelegate?

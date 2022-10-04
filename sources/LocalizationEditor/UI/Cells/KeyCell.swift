@@ -7,7 +7,6 @@
 //
 
 import Cocoa
-import Foundation
 
 final class KeyCell: NSTableCellView {
     // MARK: - Outlets
@@ -16,8 +15,6 @@ final class KeyCell: NSTableCellView {
     @IBOutlet private weak var messageLabel: NSTextField!
 
     // MARK: - Properties
-
-    static let identifier = "KeyCell"
 
     var key: String? {
         didSet {

@@ -7,21 +7,29 @@
 //
 
 import Foundation
-
+import Utils
 /// Complete localization for a single language. Represents a single strings file for a single language
 ///
-final class Localization {
-    let language: String
-    private(set) var translations: [LocalizationString]
-    let path: String
+public final class Localization {
+    public let language: String
+    public let path: String
+    public private(set) var translations: [LocalizationString]
 
-    init(language: String, translations: [LocalizationString], path: String) {
+    public init(language: String, translations: [LocalizationString], path: String) {
         self.language = language
         self.translations = translations
         self.path = path
     }
 
-    func update(key: String, value: String, message: String?) {
+    public subscript(key: String) -> LocalizationString? {
+        if let existing = translations.first(where: { $0.key == key }) {
+            return existing
+        } else {
+            return nil
+        }
+    }
+    
+    public func update(key: String, value: String, message: String?) {
         if let existing = translations.first(where: { $0.key == key }) {
             existing.update(newValue: value)
             return
@@ -31,17 +39,17 @@ final class Localization {
         translations = (translations + [newTranslation])
     }
 
-    func add(key: String, message: String?) -> LocalizationString {
+    public func add(key: String, message: String?) -> LocalizationString {
         let newTranslation = LocalizationString(key: key, value: "", message: message)
         translations = (translations.filter { $0.key != key } + [newTranslation])
         return newTranslation
     }
 
-    func remove(key: String) {
+    public func remove(key: String) {
         translations = translations.filter { $0.key != key }
     }
-    
-    func move(with indexes: IndexSet, to toIndex: Int) {
+
+    public func move(with indexes: IndexSet, to toIndex: Int) {
         translations.move(with: indexes, to: toIndex)
     }
 }
@@ -49,7 +57,7 @@ final class Localization {
 // MARK: Description
 
 extension Localization: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         return language.uppercased()
     }
 }
@@ -57,7 +65,7 @@ extension Localization: CustomStringConvertible {
 // MARK: Equality
 
 extension Localization: Equatable {
-    static func == (lhs: Localization, rhs: Localization) -> Bool {
+    public static func == (lhs: Localization, rhs: Localization) -> Bool {
         return lhs.language == rhs.language && lhs.translations == rhs.translations && lhs.path == rhs.path
     }
 }
@@ -65,7 +73,7 @@ extension Localization: Equatable {
 // MARK: Debug description
 
 extension Localization: CustomDebugStringConvertible {
-    var debugDescription: String {
+    public var debugDescription: String {
         return "\(language.uppercased()): \(translations.count) translations (\(path))"
     }
 }

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="20037" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="B8D-0N-5wS">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="21225" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="B8D-0N-5wS">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="20037"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="21225"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -109,6 +109,17 @@
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <menu key="submenu" title="Edit" id="oYd-vH-KNF">
                                     <items>
+                                        <menuItem title="Undo" keyEquivalent="z" id="9HX-e6-ccf">
+                                            <connections>
+                                                <action selector="undo:" target="Ady-hI-5gd" id="ppa-gL-Gdj"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="Redo" keyEquivalent="Z" id="DtW-Re-fRf">
+                                            <connections>
+                                                <action selector="redo:" target="Ady-hI-5gd" id="rgp-QX-TKx"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem isSeparatorItem="YES" id="OaU-3W-hvb"/>
                                         <menuItem title="Cut" keyEquivalent="x" id="3sm-HN-6CE" userLabel="Cut">
                                             <userDefinedRuntimeAttributes>
                                                 <userDefinedRuntimeAttribute type="string" keyPath="localizableString" value="cut"/>
@@ -255,7 +266,7 @@
                                 <toolbarItem implicitItemIdentifier="D612B8EC-2DD0-4F6F-BC29-1459EE743142" label="String table" paletteLabel="String table" title="Open folder first" id="rRs-lz-dHI">
                                     <nil key="toolTip"/>
                                     <size key="minSize" width="100" height="24"/>
-                                    <size key="maxSize" width="500" height="24"/>
+                                    <size key="maxSize" width="200" height="24"/>
                                     <popUpButton key="view" verticalHuggingPriority="750" id="0iO-g6-P1U">
                                         <rect key="frame" x="0.0" y="14" width="100" height="24"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
@@ -290,21 +301,6 @@
                                         </userDefinedRuntimeAttributes>
                                     </searchField>
                                 </toolbarItem>
-                                <toolbarItem implicitItemIdentifier="8AA5A4E1-359F-4E3E-8BBA-D3AAAF529BE0" label="New translation" paletteLabel="New translation" image="NSAddTemplate" sizingBehavior="auto" id="1Cc-Nn-JQX">
-                                    <nil key="toolTip"/>
-                                    <imageView key="view" horizontalHuggingPriority="251" verticalHuggingPriority="251" id="LUP-5J-Wfe">
-                                        <rect key="frame" x="37" y="14.5" width="14.5" height="13"/>
-                                        <autoresizingMask key="autoresizingMask"/>
-                                        <gestureRecognizers>
-                                            <clickGestureRecognizer delaysPrimaryMouseButtonEvents="YES" numberOfClicksRequired="1" id="p2g-ox-RGE">
-                                                <connections>
-                                                    <action selector="addAction:" target="B8D-0N-5wS" id="elE-Aw-3Jg"/>
-                                                </connections>
-                                            </clickGestureRecognizer>
-                                        </gestureRecognizers>
-                                        <imageCell key="cell" enabled="NO" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="NSAddTemplate" id="6JK-EV-ulh"/>
-                                    </imageView>
-                                </toolbarItem>
                                 <toolbarItem implicitItemIdentifier="13E9B60D-CBEC-4E7D-96C3-FE098E195C25" label="Filter" paletteLabel="Filter" title="All" sizingBehavior="auto" id="4TV-x9-bks">
                                     <nil key="toolTip"/>
                                     <popUpButton key="view" verticalHuggingPriority="750" id="CF5-IQ-Tcp">
@@ -330,10 +326,33 @@
                                         </popUpButtonCell>
                                     </popUpButton>
                                 </toolbarItem>
+                                <toolbarItem implicitItemIdentifier="A3E0EF6B-878E-4C4B-8F3C-6ED52C863372" label="Drag" paletteLabel="Drag" tag="-1" image="NSListViewTemplate" bordered="YES" sizingBehavior="auto" id="q7M-Oo-e6i" userLabel="Drag Button">
+                                    <connections>
+                                        <action selector="dragRowAction:" target="B8D-0N-5wS" id="1a1-Hp-WBy"/>
+                                    </connections>
+                                </toolbarItem>
+                                <toolbarItem implicitItemIdentifier="0751B948-9E62-4BDC-81F4-9739F25A5278" label="New Translation" paletteLabel="New Translation" tag="-1" image="NSAddTemplate" bordered="YES" sizingBehavior="auto" id="c7g-lB-SgE">
+                                    <connections>
+                                        <action selector="addAction:" target="B8D-0N-5wS" id="atZ-b1-XbM"/>
+                                    </connections>
+                                </toolbarItem>
+                                <toolbarItem implicitItemIdentifier="462D5F81-126F-4BA0-A65E-8E7613B0C468" label="Undo" paletteLabel="Undo" tag="-1" image="arrowshape.turn.up.left.fill" catalog="system" bordered="YES" sizingBehavior="auto" id="HEX-ta-dDW">
+                                    <connections>
+                                        <action selector="undoAction:" target="B8D-0N-5wS" id="cix-cN-H78"/>
+                                    </connections>
+                                </toolbarItem>
+                                <toolbarItem implicitItemIdentifier="F96812AB-557E-4611-B7D3-71FACB360302" label="Redo" paletteLabel="Redo" tag="-1" image="arrowshape.turn.up.right.fill" catalog="system" bordered="YES" sizingBehavior="auto" id="jqI-If-Ik5">
+                                    <connections>
+                                        <action selector="redoAction:" target="B8D-0N-5wS" id="nwo-mf-OtK"/>
+                                    </connections>
+                                </toolbarItem>
                             </allowedToolbarItems>
                             <defaultToolbarItems>
                                 <toolbarItem reference="gFH-hP-QmF"/>
-                                <toolbarItem reference="1Cc-Nn-JQX"/>
+                                <toolbarItem reference="c7g-lB-SgE"/>
+                                <toolbarItem reference="q7M-Oo-e6i"/>
+                                <toolbarItem reference="HEX-ta-dDW"/>
+                                <toolbarItem reference="jqI-If-Ik5"/>
                                 <toolbarItem reference="XEY-XQ-DCX"/>
                                 <toolbarItem reference="rRs-lz-dHI"/>
                                 <toolbarItem reference="XEY-XQ-DCX"/>
@@ -346,11 +365,14 @@
                         </connections>
                     </window>
                     <connections>
+                        <outlet property="dragButton" destination="q7M-Oo-e6i" id="mqu-DI-JVY"/>
                         <outlet property="filterButton" destination="CF5-IQ-Tcp" id="S1m-OB-mVY"/>
-                        <outlet property="newButton" destination="1Cc-Nn-JQX" id="Nl1-1D-bIT"/>
+                        <outlet property="newButton" destination="c7g-lB-SgE" id="dCo-yq-42S"/>
                         <outlet property="openButton" destination="gFH-hP-QmF" id="SGd-9O-j73"/>
+                        <outlet property="redoButton" destination="jqI-If-Ik5" id="NIk-zx-pzC"/>
                         <outlet property="searchField" destination="44R-ph-qlU" id="zFZ-gO-m7v"/>
                         <outlet property="selectButton" destination="0iO-g6-P1U" id="mob-S4-Gl5"/>
+                        <outlet property="undoButton" destination="HEX-ta-dDW" id="1ff-gQ-sIR"/>
                         <segue destination="XfG-lQ-9wD" kind="relationship" relationship="window.shadowedContentViewController" id="cq2-FE-JQM"/>
                     </connections>
                 </windowController>
@@ -372,7 +394,7 @@
                                     <rect key="frame" x="1" y="1" width="738" height="501"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" alternatingRowBackgroundColors="YES" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" typeSelect="NO" usesAutomaticRowHeights="YES" headerView="Bry-MY-OIY" id="ByO-mI-RPv">
+                                        <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" alternatingRowBackgroundColors="YES" columnReordering="NO" columnResizing="NO" multipleSelection="NO" autosaveColumns="NO" typeSelect="NO" headerView="Bry-MY-OIY" id="ByO-mI-RPv">
                                             <rect key="frame" x="0.0" y="0.0" width="738" height="478"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <size key="intercellSpacing" width="3" height="2"/>
@@ -531,5 +553,8 @@ Gw
     <resources>
         <image name="NSAddTemplate" width="14" height="13"/>
         <image name="NSFolder" width="32" height="32"/>
+        <image name="NSListViewTemplate" width="16" height="12"/>
+        <image name="arrowshape.turn.up.left.fill" catalog="system" width="17" height="14"/>
+        <image name="arrowshape.turn.up.right.fill" catalog="system" width="17" height="14"/>
     </resources>
 </document>

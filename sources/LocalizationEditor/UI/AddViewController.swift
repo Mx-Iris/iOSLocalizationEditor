@@ -27,7 +27,6 @@ final class AddViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
         setup()
     }
 
@@ -44,10 +43,7 @@ final class AddViewController: NSViewController {
     }
 
     @IBAction private func addAction(_ sender: Any) {
-        guard !keyTextField.stringValue.isEmpty else {
-            return
-        }
-
+        guard !keyTextField.stringValue.isEmpty else { return }
         delegate?.userDidAddTranslation(key: keyTextField.stringValue, message: messageTextField.stringValue.isEmpty ? nil : messageTextField.stringValue)
     }
 }

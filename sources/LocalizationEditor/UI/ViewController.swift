@@ -7,6 +7,12 @@
 //
 
 import Cocoa
+import Combine
+import Providers
+import Utils
+import Models
+import NSObject_Combine
+import NSAttributedStringBuilder
 
 /// Protocol for announcing changes to the toolbar. Needed because the VC does not have direct access to the toolbar (handled by WindowController)
 ///
@@ -25,6 +31,10 @@ final class ViewController: NSViewController {
     enum FixedColumn: String {
         case key
         case actions
+        case drag
+        var identifier: NSUserInterfaceItemIdentifier {
+            .init(rawValue: rawValue)
+        }
     }
 
     // MARK: - Outlets
@@ -42,31 +52,39 @@ final class ViewController: NSViewController {
     private var currentFilter: Filter = .all
     /// 当前的搜索词
     private var currentSearchTerm: String = ""
+    
     private let dataSource = LocalizationsDataSource()
+    
     private var presendedAddViewController: AddViewController?
+    
     /// 当前打开的文件夹的URL
     private var currentOpenFolderUrl: URL?
-
+    
+    private var fileMonitor: FolderContentMonitor?
+    
+    private let operationQueue: OperationQueue = .init()
+    
+    private var isDrag: Bool = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
         setupData()
     }
 
     // MARK: - Setup
 
     private func setupData() {
-        let cellIdentifiers = [KeyCell.identifier, LocalizationCell.identifier, ActionsCell.identifier]
+        let cellIdentifiers = [KeyCell.identifier, LocalizationCell.identifier, ActionsCell.identifier, DragCell.identifier]
         cellIdentifiers.forEach { identifier in
             let cell = NSNib(nibNamed: identifier, bundle: nil)
             tableView.register(cell, forIdentifier: NSUserInterfaceItemIdentifier(rawValue: identifier))
         }
-
+        
         tableView.delegate = self
         tableView.dataSource = dataSource
         tableView.allowsColumnResizing = true
         tableView.usesAutomaticRowHeights = true
-
+        tableView.registerForDraggedTypes([.rowIndex])
         tableView.selectionHighlightStyle = .none
     }
 
@@ -83,14 +101,14 @@ final class ViewController: NSViewController {
 
         let columns = tableView.tableColumns
         columns.forEach {
-            self.tableView.removeTableColumn($0)
+            tableView.removeTableColumn($0)
         }
 
         // not sure why this is needed but without it autolayout crashes and the whole tableview breaks visually
         // 不知道为什么这是必要的，但没有它，自动布局崩溃和整个表视图样式被破坏
         tableView.reloadData()
 
-        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(FixedColumn.key.rawValue))
+        let column = NSTableColumn(identifier: FixedColumn.key.identifier)
         column.title = "key".localized
         tableView.addTableColumn(column)
 
@@ -99,15 +117,19 @@ final class ViewController: NSViewController {
             column.title = Flag(languageCode: language).emoji
             column.maxWidth = 460
             column.minWidth = 50
-            self.tableView.addTableColumn(column)
+            tableView.addTableColumn(column)
         }
 
-        let actionsColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(FixedColumn.actions.rawValue))
-        actionsColumn.title = "actions".localized
+        let actionsColumn = NSTableColumn(identifier: FixedColumn.actions.identifier)
+        actionsColumn.headerCell.attributedStringValue = NSAttributedString {
+            AText("actions".localized)
+                .paragraphStyle(NSMutableParagraphStyle().then { $0.alignment = .center })
+        }
         actionsColumn.maxWidth = 48
         actionsColumn.minWidth = 32
         tableView.addTableColumn(actionsColumn)
 
+        
         tableView.reloadData()
 
         // Also resize the columns:
@@ -126,22 +148,29 @@ final class ViewController: NSViewController {
     }
 
     private func handleOpenFolder(_ url: URL) {
-        progressIndicator.startAnimation(self)
+        OperationQueue.main.addOperation {
+            self.progressIndicator.startAnimation(self)
+        }
         dataSource.load(folder: url) { [unowned self] languages, title, localizationFiles in
-            self.currentOpenFolderUrl = url
-            self.reloadData(with: languages, title: title)
-            self.progressIndicator.stopAnimation(self)
+            currentOpenFolderUrl = url
+            reloadData(with: languages, title: title)
+            
+            OperationQueue.main.addOperation {
+                self.progressIndicator.stopAnimation(self)
+            }
 
             if let title = title {
-                self.delegate?.shouldSetLocalizationGroups(groups: localizationFiles)
-                self.delegate?.shouldSelectLocalizationGroup(title: title)
+                delegate?.shouldSetLocalizationGroups(groups: localizationFiles)
+                delegate?.shouldSelectLocalizationGroup(title: title)
             }
         }
     }
 
     private func openFolder(forPath path: String? = nil) {
         if let path = path {
-            handleOpenFolder(URL(fileURLWithPath: path))
+            let url = URL(fileURLWithPath: path)
+            handleOpenFolder(url)
+            observeFileChange(for: url)
             return
         }
 
@@ -154,8 +183,42 @@ final class ViewController: NSViewController {
             guard result.rawValue == NSApplication.ModalResponse.OK.rawValue, let url = openPanel.url else {
                 return
             }
+            self.observeFileChange(for: url)
             self.handleOpenFolder(url)
         }
+    }
+
+    private func observeFileChange(for url: URL) {
+        fileMonitor = FolderContentMonitor(url: url)
+        fileMonitor?.publisher
+            .filter { $0.change.contains([.isFile, .renamed]) && $0.filename != ".DS_Store" }
+            .debounce(for: 1, scheduler: RunLoop.current)
+            .sink { [unowned self] _ in
+
+                guard let window = view.window else { return }
+                let alert = NSAlert()
+                alert.addButton(withTitle: "重新载入")
+                alert.addButton(withTitle: "暂时不要")
+                alert.alertStyle = .critical
+                alert.messageText = "检测到源文件已更改，是否重新载入数据"
+                alert.informativeText = "如果在没有重新载入的情况下操作会覆盖你在其他地方的更改"
+                OperationQueue.main.addOperation {
+                    alert.beginSheetModal(for: window) { response in
+
+                        switch response {
+                        case .alertFirstButtonReturn:
+                            self.operationQueue.addOperation {
+                                self.handleOpenFolder(url)
+                            }
+                        case .alertSecondButtonReturn:
+                            break
+                        default:
+                            break
+                        }
+                    }
+                }
+            }
+            .store(in: &combine.cancellables)
     }
 }
 
@@ -169,31 +232,37 @@ extension ViewController: NSTableViewDelegate {
 
         switch identifier.rawValue {
         case FixedColumn.key.rawValue:
-            let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: KeyCell.identifier), owner: self)! as! KeyCell
+            let cell = tableView.makeView(withIdentifier: KeyCell.reuseID, owner: self) as! KeyCell
             cell.key = dataSource.getKey(row: row)
             cell.message = dataSource.getMessage(row: row)
             return cell
         case FixedColumn.actions.rawValue:
-            let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: ActionsCell.identifier), owner: self)! as! ActionsCell
+            let cell = tableView.makeView(withIdentifier: ActionsCell.reuseID, owner: self) as! ActionsCell
             cell.delegate = self
             cell.key = dataSource.getKey(row: row)
             return cell
+        case FixedColumn.drag.rawValue:
+            let cell = tableView.makeView(withIdentifier: DragCell.reuseID, owner: self) as! DragCell
+            return cell
         default:
             let language = identifier.rawValue
-            let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: LocalizationCell.identifier), owner: self)! as! LocalizationCell
+            let cell = tableView.makeView(withIdentifier: LocalizationCell.reuseID, owner: self) as! LocalizationCell
             cell.delegate = self
             cell.language = language
             cell.value = row < dataSource.numberOfRows(in: tableView) ? dataSource.getLocalization(language: language, row: row) : nil
             return cell
         }
     }
+    func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
+        50
+    }
 }
 
 // MARK: - LocalizationCellDelegate
 
 extension ViewController: LocalizationCellDelegate {
-    func userDidUpdateLocalizationString(language: String, key: String, with value: String, message: String?) {
-        dataSource.updateLocalization(language: language, key: key, with: value, message: message)
+    func userDidUpdateLocalizationString(language: String, key: String, with value: String, message: String?, willUpdate: Closure?, didUpdate: Closure?) {
+        dataSource.updateLocalization(language: language, key: key, with: value, message: message, willUpdate: willUpdate, didUpdate: didUpdate)
     }
 }
 
@@ -201,6 +270,13 @@ extension ViewController: LocalizationCellDelegate {
 
 extension ViewController: ActionsCellDelegate {
     func userDidRequestRemoval(of key: String) {
+        
+        let message = dataSource.getMessage(row: dataSource.getRowForKey(key: key))
+        
+        undoManager?.registerUndo(withTarget: self) { target in
+            target.userDidAddTranslation(key: key, message: message)
+        }
+        
         dataSource.deleteLocalization(key: key)
 
         // reload keeping scroll position
@@ -225,10 +301,8 @@ extension ViewController: WindowControllerToolbarDelegate {
     ///
     /// - Parameter filter: new filter setting
     func userDidRequestFilterChange(filter: Filter) {
-        guard currentFilter != filter else {
-            return
-        }
-
+        guard currentFilter != filter else { return }
+        
         currentFilter = filter
         self.filter()
     }
@@ -237,9 +311,7 @@ extension ViewController: WindowControllerToolbarDelegate {
     ///
     /// - Parameter searchTerm: new search term
     func userDidRequestSearch(searchTerm: String) {
-        guard currentSearchTerm != searchTerm else {
-            return
-        }
+        guard currentSearchTerm != searchTerm else { return }
 
         currentSearchTerm = searchTerm
         filter()
@@ -265,10 +337,32 @@ extension ViewController: WindowControllerToolbarDelegate {
 
     /// Invoked when user requests reload selected folder
     func userDidRequestReloadData() {
-        guard let currentOpenFolderUrl = currentOpenFolderUrl else {
-            return
-        }
+        guard let currentOpenFolderUrl = currentOpenFolderUrl else { return }
         handleOpenFolder(currentOpenFolderUrl)
+    }
+    
+    func userDidRequestDragRow() {
+        if isDrag {
+            if let tableColumn = tableView.tableColumn(withIdentifier: NSUserInterfaceItemIdentifier(FixedColumn.drag.rawValue)) {
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = 0.2
+                    tableView.animator().removeTableColumn(tableColumn)
+                    tableView.animator().sizeToFit()
+                }
+            }
+            isDrag = false
+        } else {
+            let dragColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(FixedColumn.drag.rawValue))
+            dragColumn.title = "drag".localized
+            dragColumn.maxWidth = 48
+            dragColumn.minWidth = 32
+            
+            NSAnimationContext.runAnimationGroup { _ in
+                tableView.animator().addTableColumn(dragColumn)
+            }
+            isDrag = true
+            print(DragCell.identifier)
+        }
     }
 }
 
@@ -281,7 +375,11 @@ extension ViewController: AddViewControllerDelegate {
 
     func userDidAddTranslation(key: String, message: String?) {
         dismiss()
-
+        
+        undoManager?.registerUndo(withTarget: self) { target in
+            target.userDidRequestRemoval(of: key)
+        }
+        
         dataSource.addLocalizationKey(key: key, message: message)
         filter()
 
@@ -299,4 +397,8 @@ extension ViewController: AddViewControllerDelegate {
 
         dismiss(presendedAddViewController)
     }
+}
+
+extension ViewController {
+    
 }

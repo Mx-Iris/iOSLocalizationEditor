@@ -8,15 +8,14 @@
 
 import Foundation
 
-/**
-Group of localizations, like Localizabe.strings, InfoPlist.strings, etc.
- */
-final class LocalizationGroup {
-    let name: String
-    let path: String
-    var localizations: [Localization]
+/// Group of localizations, like Localizabe.strings, InfoPlist.strings, etc.
+///
+public final class LocalizationGroup {
+    public let name: String
+    public let path: String
+    public let localizations: [Localization]
 
-    init(name: String, localizations: [Localization], path: String) {
+    public init(name: String, localizations: [Localization], path: String) {
         self.name = name
         self.localizations = localizations
         self.path = path
@@ -26,7 +25,7 @@ final class LocalizationGroup {
 // MARK: Description
 
 extension LocalizationGroup: CustomStringConvertible {
-    var description: String {
+    public var description: String {
         return name
     }
 }
@@ -34,11 +33,11 @@ extension LocalizationGroup: CustomStringConvertible {
 // MARK: Comparison
 
 extension LocalizationGroup: Comparable {
-    static func < (lhs: LocalizationGroup, rhs: LocalizationGroup) -> Bool {
+    public static func < (lhs: LocalizationGroup, rhs: LocalizationGroup) -> Bool {
         return lhs.name < rhs.name
     }
 
-    static func == (lhs: LocalizationGroup, rhs: LocalizationGroup) -> Bool {
+    public static func == (lhs: LocalizationGroup, rhs: LocalizationGroup) -> Bool {
         return lhs.name == rhs.name && lhs.path == rhs.path && lhs.localizations == rhs.localizations
     }
 }

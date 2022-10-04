@@ -10,14 +10,16 @@ import Cocoa
 import os
 import OrderedCollections
 import ObjectiveC
+import Models
+import Utils
 
-typealias LocalizationsDataSourceData = ([String], String?, [LocalizationGroup])
+public typealias LocalizationsDataSourceData = ([String], String?, [LocalizationGroup])
 
-enum Filter: Int, CaseIterable, CustomStringConvertible {
+public enum Filter: Int, CaseIterable, CustomStringConvertible {
     case all
     case missing
 
-    var description: String {
+    public var description: String {
         switch self {
         case .all:
             return "all".localized
@@ -28,7 +30,7 @@ enum Filter: Int, CaseIterable, CustomStringConvertible {
 }
 
 /// Data source for the NSTableView with localizations
-final class LocalizationsDataSource: NSObject {
+public final class LocalizationsDataSource: NSObject {
     private let localizationProvider = LocalizationProvider()
 
     private var localizationGroups: [LocalizationGroup] = []
@@ -38,6 +40,8 @@ final class LocalizationsDataSource: NSObject {
     private var languagesCount = 0
 
     private var mainLocalization: Localization?
+
+    public var undoManager: UndoManager?
 
     /// Dictionary indexed by localization key on the first level and by language on the second level for easier access
     /// Dictionary 在第一级按本地化key索引, 在第二级按语言索引, 以便于访问
@@ -55,7 +59,7 @@ final class LocalizationsDataSource: NSObject {
     /// - Parameter folder: directory path to start the search （开始搜索的目录路径）
     ///
     /// - Parameter onCompletion: callback with data （完成时的回掉，会传入加载完毕的数据）
-    func load(folder: URL, onCompletion: @escaping (LocalizationsDataSourceData) -> Void) {
+    public func load(folder: URL, onCompletion: @escaping (LocalizationsDataSourceData) -> Void) {
         DispatchQueue.global(qos: .background).async {
             let localizationGroups = self.localizationProvider.getLocalizations(url: folder)
             guard localizationGroups.count > 0,
@@ -121,10 +125,132 @@ final class LocalizationsDataSource: NSObject {
     /// - Parameter group: group name
     ///
     /// - Returns: array of languages
-    func selectGroupAndGetLanguages(for group: String) -> [String] {
+    public func selectGroupAndGetLanguages(for group: String) -> [String] {
         let group = localizationGroups.first(where: { $0.name == group })!
         let languages = select(group: group)
         return languages
+    }
+
+    /// Adds new localization key with a message to all the localizations
+    /// 添加新的`Localization`对象（其中包含`key`和`message`）
+    ///
+    /// - Parameter key: key to add
+    ///
+    /// - Parameter message: message (optional)
+    public func addLocalizationKey(key: String, message: String?) {
+        guard let selectedLocalizationGroup = selectedLocalizationGroup else {
+            return
+        }
+
+        selectedLocalizationGroup.localizations.forEach { localization in
+
+            let newTranslation = localizationProvider.addKeyToLocalization(localization: localization, key: key, message: message)
+            // If we already created the entry in the data dict, do not overwrite the entry entirely.
+            // Instead just add the data to the already present entry.
+            if data[key] != nil {
+                data[key]?[localization.language] = newTranslation
+            } else {
+                data[key] = [localization.language: newTranslation]
+            }
+        }
+    }
+
+    /// Deletes given key from all the localizations
+    /// 从所有`Localization`中删除给定的`key`
+    ///
+    /// - Parameter key: key to delete
+    public func deleteLocalization(key: String) {
+        guard let selectedLocalizationGroup = selectedLocalizationGroup else {
+            return
+        }
+
+        selectedLocalizationGroup.localizations.forEach { localization in
+            self.localizationProvider.deleteKeyFromLocalization(localization: localization, key: key)
+        }
+        data.removeValue(forKey: key)
+    }
+
+    /// Updates given localization values in given language
+    /// 更新给定语言中给定的`Localization`值
+    ///
+    /// - Parameter language: language to update
+    ///
+    /// - Parameter key: localization string key
+    ///
+    /// - Parameter value: new value for the localization string
+    public func updateLocalization(
+        language: String,
+        key: String,
+        with value: String,
+        message: String?,
+        willUpdate: Closure? = nil,
+        didUpdate: Closure? = nil
+    ) {
+        guard let localization = selectedLocalizationGroup?.localizations.first(where: { $0.language == language }) else {
+            return
+        }
+        localizationProvider.updateLocalization(
+            localization: localization,
+            key: key,
+            with: value,
+            message: message,
+            willUpdate: willUpdate,
+            didUpdate: didUpdate
+        )
+    }
+
+    /// Gets key for speficied row
+    /// 获取指定行的 `key`
+    ///
+    /// - Parameter row: row number
+    ///
+    /// - Returns: key if valid
+    public func getKey(row: Int) -> String? {
+        return row < filteredKeys.count ? filteredKeys[row] : nil
+    }
+
+    /// Gets the message for specified row
+    /// 获取指定行的 `message`
+    ///
+    /// - Parameter row: row number
+    ///
+    /// - Returns: message if any
+    public func getMessage(row: Int?) -> String? {
+        guard let row = row, let key = getKey(row: row), let part = data[key], let languageKey = mainLocalization?.language else {
+            return nil
+        }
+        return part[languageKey]??.message
+    }
+
+    /// Gets localization for specified language and row. The language should be always valid. The localization might be missing, returning it with empty value in that case
+    /// 获取指定语言和行的`Localization`。语言应该总是有效的。`Localization`可能丢失，在这种情况下返回空值
+    ///
+    /// - Parameter language: language to get the localization for
+    ///
+    /// - Parameter row: row number
+    ///
+    /// - Returns: localization string
+    public func getLocalization(language: String, row: Int) -> LocalizationString {
+        guard let key = getKey(row: row) else {
+            // should not happen but you never know
+            fatalError("No key for given row")
+        }
+
+        guard let section = data[key], let data = section[language], let localization = data else {
+            return LocalizationString(key: key, value: "", message: "")
+        }
+
+        return localization
+    }
+
+    /// Returns row number for given key
+    /// 返回给定`key`的`row`
+    ///
+    /// - Parameter key: key to check
+    ///
+    /// - Returns: row number (if any)
+    public func getRowForKey(key: String) -> Int? {
+        return filteredKeys.firstIndex(of: key)
     }
 
     /// Filters the data by given filter and search string. Empty search string means all data us included.
@@ -132,7 +258,7 @@ final class LocalizationsDataSource: NSObject {
     ///
     /// Filtering is done by setting the filteredKeys property. A key is included if it matches the search string or any of its translations matches.
     /// 过滤是通过设置filteredKeys属性来完成的。如果匹配搜索字符串或其任何翻译匹配，则包含键。
-    func filter(by filter: Filter, searchString: String?) {
+    public func filter(by filter: Filter, searchString: String?) {
         os_log("Filtering by %@", type: OSLogType.debug, "\(filter)")
 
         // first use filter, missing translation is a translation that is missing in any language for the given key
@@ -164,114 +290,9 @@ final class LocalizationsDataSource: NSObject {
 
         filteredKeys = keys
     }
+}
 
-    /// Gets key for speficied row
-    /// 获取指定行的 `key`
-    ///
-    /// - Parameter row: row number
-    ///
-    /// - Returns: key if valid
-    func getKey(row: Int) -> String? {
-        return row < filteredKeys.count ? filteredKeys[row] : nil
-    }
-
-    /// Gets the message for specified row
-    /// 获取指定行的 `message`
-    ///
-    /// - Parameter row: row number
-    ///
-    /// - Returns: message if any
-    func getMessage(row: Int) -> String? {
-        guard let key = getKey(row: row), let part = data[key], let languageKey = mainLocalization?.language else {
-            return nil
-        }
-        return part[languageKey]??.message
-    }
-
-    /// Gets localization for specified language and row. The language should be always valid. The localization might be missing, returning it with empty value in that case
-    /// 获取指定语言和行的`Localization`。语言应该总是有效的。`Localization`可能丢失，在这种情况下返回空值
-    ///
-    /// - Parameter language: language to get the localization for
-    ///
-    /// - Parameter row: row number
-    ///
-    /// - Returns: localization string
-    func getLocalization(language: String, row: Int) -> LocalizationString {
-        guard let key = getKey(row: row) else {
-            // should not happen but you never know
-            fatalError("No key for given row")
-        }
-
-        guard let section = data[key], let data = section[language], let localization = data else {
-            return LocalizationString(key: key, value: "", message: "")
-        }
-
-        return localization
-    }
-
-    /// Updates given localization values in given language
-    /// 更新给定语言中给定的`Localization`值
-    ///
-    /// - Parameter language: language to update
-    ///
-    /// - Parameter key: localization string key
-    ///
-    /// - Parameter value: new value for the localization string
-    func updateLocalization(language: String, key: String, with value: String, message: String?) {
-        guard let localization = selectedLocalizationGroup?.localizations.first(where: { $0.language == language }) else {
-            return
-        }
-        localizationProvider.updateLocalization(localization: localization, key: key, with: value, message: message)
-    }
-
-    /// Deletes given key from all the localizations
-    /// 从所有`Localization`中删除给定的`key`
-    ///
-    /// - Parameter key: key to delete
-    func deleteLocalization(key: String) {
-        guard let selectedLocalizationGroup = selectedLocalizationGroup else {
-            return
-        }
-
-        selectedLocalizationGroup.localizations.forEach { localization in
-            self.localizationProvider.deleteKeyFromLocalization(localization: localization, key: key)
-        }
-        data.removeValue(forKey: key)
-    }
-
-    /// Adds new localization key with a message to all the localizations
-    /// 添加新的`Localization`对象（其中包含`key`和`message`）
-    ///
-    /// - Parameter key: key to add
-    ///
-    /// - Parameter message: message (optional)
-    func addLocalizationKey(key: String, message: String?) {
-        guard let selectedLocalizationGroup = selectedLocalizationGroup else {
-            return
-        }
-
-        selectedLocalizationGroup.localizations.forEach { localization in
-            let newTranslation = localizationProvider.addKeyToLocalization(localization: localization, key: key, message: message)
-            // If we already created the entry in the data dict, do not overwrite the entry entirely.
-            // Instead just add the data to the already present entry.
-            if data[key] != nil {
-                data[key]?[localization.language] = newTranslation
-            } else {
-                data[key] = [localization.language: newTranslation]
-            }
-        }
-    }
-
-    /// Returns row number for given key
-    /// 返回给定`key`的`row`
-    ///
-    /// - Parameter key: key to check
-    ///
-    /// - Returns: row number (if any)
-    func getRowForKey(key: String) -> Int? {
-        return filteredKeys.firstIndex(of: key)
-    }
-    
+public extension LocalizationsDataSource {
     func moveLocalizations(with indexes: IndexSet, to toIndex: Int) {
         data.move(with: indexes, to: toIndex)
         selectedLocalizationGroup?.localizations.forEach { localization in
@@ -284,36 +305,36 @@ final class LocalizationsDataSource: NSObject {
 // MARK: - Delegate
 
 extension LocalizationsDataSource: NSTableViewDataSource {
-    func numberOfRows(in _: NSTableView) -> Int {
+    public func numberOfRows(in _: NSTableView) -> Int {
         return filteredKeys.count
     }
 
-    func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
+    public func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
         tableView.draggingDestinationFeedbackStyle = .gap
     }
-    
-    func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
+
+    public func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
         NSPasteboardItem().then {
             $0.setPropertyList(row, forType: .rowIndex)
         }
     }
 
-    func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
+    public func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
         guard dropOperation == .above, (info.draggingSource as? NSTableView) === tableView else { return [] }
         return .move
     }
 
-    func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool {
+    public func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool {
         guard let items = info.draggingPasteboard.pasteboardItems else { return false }
-        
+
         let oldIndexes = items.compactMap { $0.integer(forType: .rowIndex) }
-        
+
         if oldIndexes.isEmpty { return false }
 
         moveLocalizations(with: IndexSet(oldIndexes), to: row)
-        
+
         tableView.beginUpdates()
-        
+
         var oldIndexOffset = 0
         var newIndexOffset = 0
         for oldIndex in oldIndexes {
@@ -325,12 +346,13 @@ extension LocalizationsDataSource: NSTableViewDataSource {
                 newIndexOffset += 1
             }
         }
-        
+
         tableView.endUpdates()
 
         return true
     }
-    func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+
+    public func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
         tableView.draggingDestinationFeedbackStyle = .none
     }
 }

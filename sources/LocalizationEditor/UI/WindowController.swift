@@ -7,62 +7,55 @@
 //
 
 import Cocoa
+import Providers
+import Models
+import NSObject_Combine
 
-/**
-Protocol for announcing user interaction with the toolbar
- */
+/// Protocol for announcing user interaction with the toolbar
+///
 protocol WindowControllerToolbarDelegate: AnyObject {
-    /**
-     Invoked when user requests opening a folder
-     */
+    /// Invoked when user requests opening a folder
     func userDidRequestFolderOpen()
 
-    /**
-     Invoked when user requests opening a folder for a specific path
-     */
+    /// Invoked when user requests opening a folder for a specific path
     func userDidRequestFolderOpen(withPath: String)
 
-    /**
-     Invoked when user requests filter change
-
-     - Parameter filter: new filter setting
-     */
+    /// Invoked when user requests filter change
+    ///
+    /// - Parameter filter: new filter setting
     func userDidRequestFilterChange(filter: Filter)
 
-    /**
-     Invoked when user requests searching
-
-     - Parameter searchTerm: new search term
-     */
+    /// Invoked when user requests searching
+    ///
+    /// - Parameter searchTerm: new search term
     func userDidRequestSearch(searchTerm: String)
 
-    /**
-     Invoked when user requests change of the selected localization group
-
-     - Parameter group: new localization group title
-     */
+    /// Invoked when user requests change of the selected localization group
+    ///
+    /// - Parameter group: new localization group title
     func userDidRequestLocalizationGroupChange(group: String)
 
-    /**
-     Invoked when user requests adding a new translation
-     */
+    /// Invoked when user requests adding a new translation
     func userDidRequestAddNewTranslation()
 
-    /**
-     Invoked when user requests reload selected folder
-     */
+    /// Invoked when user requests reload selected folder
     func userDidRequestReloadData()
+
+    /// Invoked when user requests drag row
+    func userDidRequestDragRow()
 }
 
 final class WindowController: NSWindowController {
-
     // MARK: - Outlets
 
-    @IBOutlet private weak var openButton: NSToolbarItem!
-    @IBOutlet private weak var searchField: NSSearchField!
-    @IBOutlet private weak var selectButton: NSPopUpButton!
-    @IBOutlet private weak var filterButton: NSPopUpButton!
-    @IBOutlet private weak var newButton: NSToolbarItem!
+    @IBOutlet private var openButton: NSToolbarItem!
+    @IBOutlet private var searchField: NSSearchField!
+    @IBOutlet private var selectButton: NSPopUpButton!
+    @IBOutlet private var filterButton: NSPopUpButton!
+    @IBOutlet private var newButton: NSToolbarItem!
+    @IBOutlet private var dragButton: NSToolbarItem!
+    @IBOutlet private var undoButton: NSToolbarItem!
+    @IBOutlet private var redoButton: NSToolbarItem!
 
     // MARK: - Properties
 
@@ -93,6 +86,15 @@ final class WindowController: NSWindowController {
         filterButton.toolTip = "filter".localized
         selectButton.toolTip = "string_table".localized
         newButton.toolTip = "new_translation".localized
+        newButton.isEnabled = false
+        dragButton.isEnabled = false
+        window?.publisher(for: \.firstResponder)
+            .receive(on: RunLoop.main)
+            .sink { [unowned self] firstResponder in
+                undoButton.isEnabled = firstResponder?.undoManager?.canUndo ?? false
+                redoButton.isEnabled = firstResponder?.undoManager?.canRedo ?? false
+            }
+            .store(in: &combine.cancellables)
     }
 
     private func setupSearch() {
@@ -123,6 +125,7 @@ final class WindowController: NSWindowController {
         filterButton.isEnabled = true
         selectButton.isEnabled = true
         newButton.isEnabled = true
+        dragButton.isEnabled = true
     }
 
     private func setupDelegates() {
@@ -134,7 +137,7 @@ final class WindowController: NSWindowController {
         mainViewController.delegate = self
 
         // informing the VC about user interacting with the toolbar
-        self.delegate = mainViewController
+        delegate = mainViewController
     }
 
     // MARK: - Actions
@@ -145,9 +148,7 @@ final class WindowController: NSWindowController {
     }
 
     @objc private func filterAction(sender: NSMenuItem) {
-        guard let filter = Filter(rawValue: sender.tag) else {
-            return
-        }
+        guard let filter = Filter(rawValue: sender.tag) else { return }
 
         delegate?.userDidRequestFilterChange(filter: filter)
     }
@@ -157,9 +158,7 @@ final class WindowController: NSWindowController {
     }
 
     @IBAction private func addAction(_ sender: Any) {
-        guard newButton.isEnabled else {
-            return
-        }
+        guard newButton.isEnabled else { return }
 
         delegate?.userDidRequestAddNewTranslation()
     }
@@ -170,6 +169,22 @@ final class WindowController: NSWindowController {
 
     @objc private func reloadDataAction(_ sender: NSMenuItem) {
         delegate?.userDidRequestReloadData()
+    }
+
+    @IBAction func dragRowAction(_ sender: NSToolbarItem) {
+        delegate?.userDidRequestDragRow()
+    }
+
+    @IBAction func undoAction(_ sender: NSToolbarItem) {
+        window?.firstResponder?.undoManager?.undo()
+        undoButton.isEnabled = window?.firstResponder?.undoManager?.canUndo ?? false
+        redoButton.isEnabled = window?.firstResponder?.undoManager?.canRedo ?? false
+    }
+
+    @IBAction func redoAction(_ sender: NSToolbarItem) {
+        window?.firstResponder?.undoManager?.redo()
+        undoButton.isEnabled = window?.firstResponder?.undoManager?.canUndo ?? false
+        redoButton.isEnabled = window?.firstResponder?.undoManager?.canRedo ?? false
     }
 }
 
@@ -184,17 +199,13 @@ extension WindowController: NSSearchFieldDelegate {
 // MARK: - ViewControllerDelegate
 
 extension WindowController: ViewControllerDelegate {
-    /**
-     Invoked when localization groups should be set in the toolbar's dropdown list
-     */
+    /// Invoked when localization groups should be set in the toolbar's dropdown list
     func shouldSetLocalizationGroups(groups: [LocalizationGroup]) {
         selectButton.menu?.removeAllItems()
-        groups.map({ NSMenuItem(title: $0.name, action: #selector(WindowController.selectAction(sender:)), keyEquivalent: "") }).forEach({ selectButton.menu?.addItem($0) })
+        groups.map { NSMenuItem(title: $0.name, action: #selector(WindowController.selectAction(sender:)), keyEquivalent: "") }.forEach { selectButton.menu?.addItem($0) }
     }
 
-    /**
-     Invoiked when search and filter should be reset in the toolbar
-     */
+    /// Invoiked when search and filter should be reset in the toolbar
     func shouldResetSearchTermAndFilter() {
         setupSearch()
         setupFilter()
@@ -203,11 +214,15 @@ extension WindowController: ViewControllerDelegate {
         delegate?.userDidRequestFilterChange(filter: .all)
     }
 
-    /**
-     Invoked when localization group should be selected in the toolbar's dropdown list
-     */
+    /// Invoked when localization group should be selected in the toolbar's dropdown list
     func shouldSelectLocalizationGroup(title: String) {
         enableControls()
         selectButton.selectItem(at: selectButton.indexOfItem(withTitle: title))
+    }
+}
+
+extension WindowController: NSToolbarItemValidation {
+    func validateToolbarItem(_ item: NSToolbarItem) -> Bool {
+        item.isEnabled
     }
 }

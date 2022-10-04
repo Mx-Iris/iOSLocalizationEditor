@@ -8,10 +8,13 @@
 
 import Foundation
 import os
+import Models
+import Utils
+
 
 /// Service for working with the strings files
 ///
-final class LocalizationProvider {
+public final class LocalizationProvider {
     /// List of folder that should be ignored when searching for localization files
     private let ignoredDirectories: Set<String> = ["Pods/", "Carthage/", "build/", ".framework"]
 
@@ -22,7 +25,15 @@ final class LocalizationProvider {
     /// - Parameter localization: localization to update
     /// - Parameter key: localization string key
     /// - Parameter value: new value for the localization string
-    func updateLocalization(localization: Localization, key: String, with value: String, message: String?) {
+
+    public func updateLocalization(
+        localization: Localization,
+        key: String,
+        with value: String,
+        message: String?,
+        willUpdate: Closure? = nil,
+        didUpdate: Closure? = nil
+    ) {
         if let existing = localization.translations.first(where: { $0.key == key }), existing.value == value, existing.message == message {
             os_log("Same value provided for %@, not updating", type: OSLogType.debug, existing.description)
             return
@@ -30,15 +41,19 @@ final class LocalizationProvider {
 
         os_log("Updating %@ in %@ with Message: %@)", type: OSLogType.debug, key, value, message ?? "No Message.")
 
+        willUpdate?()
+
         localization.update(key: key, value: value, message: message)
 
         writeToFile(localization: localization)
+
+        didUpdate?()
     }
-    
-    func update(localization: Localization) {
+
+    public func update(localization: Localization) {
         writeToFile(localization: localization)
     }
-    
+
     /// Writes given translations to a file at given path
     ///
     /// - Parameter translatins: trabslations to write
@@ -58,7 +73,7 @@ final class LocalizationProvider {
             """
 
         }.reduce("") { prev, next in
-//            "\(prev)\n\(next)"
+            //            "\(prev)\n\(next)"
             prev + next
         }
 
@@ -74,7 +89,7 @@ final class LocalizationProvider {
     ///
     /// - Parameter localization: localization to update
     /// - Parameter key: key to delete
-    func deleteKeyFromLocalization(localization: Localization, key: String) {
+    public func deleteKeyFromLocalization(localization: Localization, key: String) {
         localization.remove(key: key)
         writeToFile(localization: localization)
     }
@@ -86,7 +101,7 @@ final class LocalizationProvider {
     /// - Parameter message: message for the key
     ///
     /// - Returns: new localization string
-    func addKeyToLocalization(localization: Localization, key: String, message: String?) -> LocalizationString {
+    public func addKeyToLocalization(localization: Localization, key: String, message: String?) -> LocalizationString {
         let newTranslation = localization.add(key: key, message: message)
         writeToFile(localization: localization)
         return newTranslation
@@ -96,7 +111,7 @@ final class LocalizationProvider {
     /// 查找并构造给定目录路径的位置
     /// - Parameter url: directory URL to start the search
     /// - Returns: list of localization groups
-    func getLocalizations(url: URL) -> [LocalizationGroup] {
+    public func getLocalizations(url: URL) -> [LocalizationGroup] {
         os_log("Searching %@ for Localizable.strings", type: OSLogType.debug, url.description)
         // e.g
         //
