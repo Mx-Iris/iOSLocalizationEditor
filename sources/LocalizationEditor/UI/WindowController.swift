@@ -7,8 +7,8 @@
 //
 
 import Cocoa
-import Providers
 import Models
+import Providers
 import NSObject_Combine
 
 /// Protocol for announcing user interaction with the toolbar
@@ -43,6 +43,10 @@ protocol WindowControllerToolbarDelegate: AnyObject {
 
     /// Invoked when user requests drag row
     func userDidRequestDragRow()
+
+    func userDidRequestAddRowAbove()
+
+    func userDidRequestAddRowBelow()
 }
 
 final class WindowController: NSWindowController {
@@ -56,6 +60,8 @@ final class WindowController: NSWindowController {
     @IBOutlet private var dragButton: NSToolbarItem!
     @IBOutlet private var undoButton: NSToolbarItem!
     @IBOutlet private var redoButton: NSToolbarItem!
+    @IBOutlet private var addRowBelowButton: NSToolbarItem!
+    @IBOutlet private var addRowAboveButton: NSToolbarItem!
 
     // MARK: - Properties
 
@@ -88,6 +94,8 @@ final class WindowController: NSWindowController {
         newButton.toolTip = "new_translation".localized
         newButton.isEnabled = false
         dragButton.isEnabled = false
+        addRowAboveButton.isEnabled = false
+        addRowBelowButton.isEnabled = false
         window?.publisher(for: \.firstResponder)
             .receive(on: RunLoop.main)
             .sink { [unowned self] firstResponder in
@@ -126,6 +134,8 @@ final class WindowController: NSWindowController {
         selectButton.isEnabled = true
         newButton.isEnabled = true
         dragButton.isEnabled = true
+        addRowBelowButton.isEnabled = true
+        addRowAboveButton.isEnabled = true
     }
 
     private func setupDelegates() {
@@ -185,6 +195,14 @@ final class WindowController: NSWindowController {
         window?.firstResponder?.undoManager?.redo()
         undoButton.isEnabled = window?.firstResponder?.undoManager?.canUndo ?? false
         redoButton.isEnabled = window?.firstResponder?.undoManager?.canRedo ?? false
+    }
+
+    @IBAction func addRowAboveAction(_ sender: NSToolbarItem) {
+        delegate?.userDidRequestAddRowAbove()
+    }
+
+    @IBAction func addRowBelowAction(_ sender: NSToolbarItem) {
+        delegate?.userDidRequestAddRowBelow()
     }
 }
 

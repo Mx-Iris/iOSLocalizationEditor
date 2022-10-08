@@ -107,6 +107,12 @@ public final class LocalizationProvider {
         return newTranslation
     }
 
+    public func insertKey(to localization: Localization, for key: String, with message: String?, at index: Int) -> LocalizationString {
+        let newTranslation = localization.insert(key: key, message: message, at: index)
+        writeToFile(localization: localization)
+        return newTranslation
+    }
+    
     /// Finds and constructs localiations for given directory path
     /// 查找并构造给定目录路径的位置
     /// - Parameter url: directory URL to start the search

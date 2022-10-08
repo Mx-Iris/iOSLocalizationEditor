@@ -14,6 +14,7 @@ import Models
 import Utils
 
 public typealias LocalizationsDataSourceData = ([String], String?, [LocalizationGroup])
+public typealias LocalizationRowData = OrderedDictionary<String, LocalizationString?>
 
 public enum Filter: Int, CaseIterable, CustomStringConvertible {
     case all
@@ -137,10 +138,8 @@ public final class LocalizationsDataSource: NSObject {
     /// - Parameter key: key to add
     ///
     /// - Parameter message: message (optional)
-    public func addLocalizationKey(key: String, message: String?) {
-        guard let selectedLocalizationGroup = selectedLocalizationGroup else {
-            return
-        }
+    public func addLocalization(key: String, message: String?) {
+        guard let selectedLocalizationGroup = selectedLocalizationGroup else { return }
 
         selectedLocalizationGroup.localizations.forEach { localization in
 
@@ -152,9 +151,24 @@ public final class LocalizationsDataSource: NSObject {
             } else {
                 data[key] = [localization.language: newTranslation]
             }
+            
         }
     }
 
+    public func insertLocalization(key: String, message: String?, row: Int) {
+        guard let selectedLocalizationGroup = selectedLocalizationGroup else { return }
+        
+        selectedLocalizationGroup.localizations.forEach { localization in
+            let newTranslation = localizationProvider.insertKey(to: localization, for: key, with: message, at: row)
+            
+            if data[key] != nil {
+                data[key]?[localization.language] = newTranslation
+            } else {
+                data.updateValue([localization.language : newTranslation], forKey: key, insertingAt: row)
+            }
+        }
+    }
+    
     /// Deletes given key from all the localizations
     /// 从所有`Localization`中删除给定的`key`
     ///
@@ -181,7 +195,7 @@ public final class LocalizationsDataSource: NSObject {
     public func updateLocalization(
         language: String,
         key: String,
-        with value: String,
+        value: String,
         message: String?,
         willUpdate: Closure? = nil,
         didUpdate: Closure? = nil
@@ -199,6 +213,16 @@ public final class LocalizationsDataSource: NSObject {
         )
     }
 
+    public func updateLocalizationRow(key: String, rowData: LocalizationRowData, rowIndex row: Int) {
+        data.updateValue(rowData, forKey: key, insertingAt: row)
+        rowData.compactMap { (key, localizationString) -> (String, String)? in
+            guard let value = localizationString?.value else { return nil }
+            return (key, value)
+        }.forEach { language, value in
+            updateLocalization(language: language, key: key, value: value, message: getMessage(row: row))
+        }
+    }
+    
     /// Gets key for speficied row
     /// 获取指定行的 `key`
     ///
@@ -243,13 +267,17 @@ public final class LocalizationsDataSource: NSObject {
         return localization
     }
 
+    public func getLocalizationRowData(key: String) -> LocalizationRowData? {
+        data[key]
+    }
+    
     /// Returns row number for given key
     /// 返回给定`key`的`row`
     ///
     /// - Parameter key: key to check
     ///
     /// - Returns: row number (if any)
-    public func getRowForKey(key: String) -> Int? {
+    public func getRow(key: String) -> Int? {
         return filteredKeys.firstIndex(of: key)
     }
 

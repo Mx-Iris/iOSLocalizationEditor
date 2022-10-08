@@ -8,7 +8,7 @@
 import Cocoa
 
 public extension NSTableCellView {
-    static var reuseID: NSUserInterfaceItemIdentifier {
+    static var itemIdentifier: NSUserInterfaceItemIdentifier {
         .init(rawValue: identifier)
     }
     static var identifier: String {

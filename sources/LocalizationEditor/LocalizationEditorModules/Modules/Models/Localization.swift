@@ -28,7 +28,7 @@ public final class Localization {
             return nil
         }
     }
-    
+
     public func update(key: String, value: String, message: String?) {
         if let existing = translations.first(where: { $0.key == key }) {
             existing.update(newValue: value)
@@ -42,6 +42,16 @@ public final class Localization {
     public func add(key: String, message: String?) -> LocalizationString {
         let newTranslation = LocalizationString(key: key, value: "", message: message)
         translations = (translations.filter { $0.key != key } + [newTranslation])
+        return newTranslation
+    }
+
+    public func insert(key: String, message: String?, at index: Int) -> LocalizationString {
+        let newTranslation = LocalizationString(key: key, value: "", message: message)
+
+        var deweightTranslations = translations.filter { $0.key != key }
+        deweightTranslations.insert(newTranslation, at: index)
+        translations = deweightTranslations
+        
         return newTranslation
     }
 

@@ -346,10 +346,22 @@
                                         <action selector="redoAction:" target="B8D-0N-5wS" id="nwo-mf-OtK"/>
                                     </connections>
                                 </toolbarItem>
+                                <toolbarItem implicitItemIdentifier="983E573C-BBAD-4C4D-B553-14ADF0FFB2FF" label="Add Row Below" paletteLabel="Add Row Below" tag="-1" image="arrow.down" catalog="system" bordered="YES" sizingBehavior="auto" id="n8h-dt-04A">
+                                    <connections>
+                                        <action selector="addRowBelowAction:" target="B8D-0N-5wS" id="4wQ-Ax-z5x"/>
+                                    </connections>
+                                </toolbarItem>
+                                <toolbarItem implicitItemIdentifier="10F43DF7-2AC6-4C89-AABB-82E712034DC5" label="Add Row Above" paletteLabel="Add Row Above" tag="-1" image="arrow.up" catalog="system" bordered="YES" sizingBehavior="auto" id="RlR-gJ-Yyc">
+                                    <connections>
+                                        <action selector="addRowAboveAction:" target="B8D-0N-5wS" id="Ol2-hw-9Uz"/>
+                                    </connections>
+                                </toolbarItem>
                             </allowedToolbarItems>
                             <defaultToolbarItems>
                                 <toolbarItem reference="gFH-hP-QmF"/>
                                 <toolbarItem reference="c7g-lB-SgE"/>
+                                <toolbarItem reference="RlR-gJ-Yyc"/>
+                                <toolbarItem reference="n8h-dt-04A"/>
                                 <toolbarItem reference="q7M-Oo-e6i"/>
                                 <toolbarItem reference="HEX-ta-dDW"/>
                                 <toolbarItem reference="jqI-If-Ik5"/>
@@ -365,6 +377,8 @@
                         </connections>
                     </window>
                     <connections>
+                        <outlet property="addRowAboveButton" destination="RlR-gJ-Yyc" id="zXg-id-J0t"/>
+                        <outlet property="addRowBelowButton" destination="n8h-dt-04A" id="EhA-OV-WeB"/>
                         <outlet property="dragButton" destination="q7M-Oo-e6i" id="mqu-DI-JVY"/>
                         <outlet property="filterButton" destination="CF5-IQ-Tcp" id="S1m-OB-mVY"/>
                         <outlet property="newButton" destination="c7g-lB-SgE" id="dCo-yq-42S"/>
@@ -554,6 +568,8 @@ Gw
         <image name="NSAddTemplate" width="14" height="13"/>
         <image name="NSFolder" width="32" height="32"/>
         <image name="NSListViewTemplate" width="16" height="12"/>
+        <image name="arrow.down" catalog="system" width="13" height="14"/>
+        <image name="arrow.up" catalog="system" width="13" height="14"/>
         <image name="arrowshape.turn.up.left.fill" catalog="system" width="17" height="14"/>
         <image name="arrowshape.turn.up.right.fill" catalog="system" width="17" height="14"/>
     </resources>

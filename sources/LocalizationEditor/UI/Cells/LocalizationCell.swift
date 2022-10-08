@@ -9,8 +9,10 @@
 import Cocoa
 import Models
 import Utils
+import NSObject_Combine
 
 protocol LocalizationCellDelegate: AnyObject {
+    func userDidFocusLocalizationString(_ cell: LocalizationCell)
     func userDidUpdateLocalizationString(language: String, key: String, with value: String, message: String?, willUpdate: Closure?, didUpdate: Closure?)
 }
 
@@ -18,7 +20,7 @@ final class LocalizationCell: NSTableCellView {
     // MARK: - Outlets
 
     @IBOutlet
-    private var valueTextField: NSTextField!
+    private var valueTextField: LocalizationTextField!
 
     // MARK: - Properties
 
@@ -40,10 +42,16 @@ final class LocalizationCell: NSTableCellView {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-
+        
         valueTextField.wantsLayer = true
         valueTextField.layer?.borderWidth = 1.0
         valueTextField.layer?.cornerRadius = 0.0
+        valueTextField.textFieldDidFocusPublisher
+            .receive(on: RunLoop.main)
+            .sink { [unowned self] in
+                delegate?.userDidFocusLocalizationString(self)
+            }
+            .store(in: &combine.cancellables)
     }
 
     /// Focues the cell by activating the NSTextField, making sure there is no selection and cursor is moved to the end
@@ -52,11 +60,13 @@ final class LocalizationCell: NSTableCellView {
         valueTextField?.currentEditor()?.selectedRange = NSRange(location: 0, length: 0)
         valueTextField?.currentEditor()?.moveToEndOfDocument(nil)
     }
+    
 }
 
 // MARK: - Delegate
 
 extension LocalizationCell: NSTextFieldDelegate {
+    
     func controlTextDidEndEditing(_: Notification) {
         update(newValue: valueTextField.stringValue)
     }

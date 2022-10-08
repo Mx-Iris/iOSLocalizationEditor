@@ -10,6 +10,7 @@
 		A117B6AD21D0FFC6008F10E4 /* LocalizableStrings-en-with-complete-messages.strings in Resources */ = {isa = PBXBuildFile; fileRef = A117B6AC21D0FFC0008F10E4 /* LocalizableStrings-en-with-complete-messages.strings */; };
 		A117B6AF21D10060008F10E4 /* LocalizableStrings-en-with-incomplete-messages.strings in Resources */ = {isa = PBXBuildFile; fileRef = A117B6AE21D10060008F10E4 /* LocalizableStrings-en-with-incomplete-messages.strings */; };
 		A15A5A4721D90AC600D3C791 /* ParserIsolationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15A5A4521D90AC600D3C791 /* ParserIsolationTests.swift */; };
+		E92B655D28EEB92F0069DE31 /* LocalizationTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = E92B655C28EEB92F0069DE31 /* LocalizationTextField.swift */; };
 		E983AC5E28E962FB00ADE22C /* Models in Frameworks */ = {isa = PBXBuildFile; productRef = E983AC5D28E962FB00ADE22C /* Models */; };
 		E983AC6028E962FB00ADE22C /* Providers in Frameworks */ = {isa = PBXBuildFile; productRef = E983AC5F28E962FB00ADE22C /* Providers */; };
 		E983AC6228E962FB00ADE22C /* Utils in Frameworks */ = {isa = PBXBuildFile; productRef = E983AC6128E962FB00ADE22C /* Utils */; };
@@ -84,6 +85,7 @@
 		A15A5A4521D90AC600D3C791 /* ParserIsolationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParserIsolationTests.swift; sourceTree = "<group>"; };
 		D644DC13283A3CB00031D188 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
 		E0A395E526088744000189F7 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		E92B655C28EEB92F0069DE31 /* LocalizationTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationTextField.swift; sourceTree = "<group>"; };
 		E952C83A28E03584000EACEC /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
 		E983AC5C28E95EDE00ADE22C /* LocalizationEditorModules */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = LocalizationEditorModules; path = LocalizationEditor/LocalizationEditorModules; sourceTree = "<group>"; };
 		E994E6C228EC495C009DBFCA /* DragCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = DragCell.xib; sourceTree = "<group>"; };
@@ -214,6 +216,7 @@
 				F3960616223A4084006C7B16 /* AddViewController.swift */,
 				F3D9C94720BEC7460081830A /* ViewController.swift */,
 				F3261F73222ED5FF006838C3 /* WindowController.swift */,
+				E92B655C28EEB92F0069DE31 /* LocalizationTextField.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -452,6 +455,7 @@
 				F3261F64222EA955006838C3 /* ActionsCell.swift in Sources */,
 				F3D9C96120BEDD0B0081830A /* LocalizationCell.swift in Sources */,
 				F3D9C94620BEC7460081830A /* AppDelegate.swift in Sources */,
+				E92B655D28EEB92F0069DE31 /* LocalizationTextField.swift in Sources */,
 				E994E6C528EC496F009DBFCA /* DragCell.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

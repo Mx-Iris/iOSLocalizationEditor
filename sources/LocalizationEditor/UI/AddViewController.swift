@@ -10,11 +10,16 @@ import Cocoa
 
 protocol AddViewControllerDelegate: AnyObject {
     func userDidCancel()
-    func userDidAddTranslation(key: String, message: String?)
+    func userDidAddTranslation(key: String, message: String?, addMode: AddViewController.AddMode)
 }
 
 final class AddViewController: NSViewController {
 
+    enum AddMode {
+        case append
+        case insert(Int)
+    }
+    
     // MARK: - Outlets
 
     @IBOutlet private weak var keyTextField: NSTextField!
@@ -24,7 +29,8 @@ final class AddViewController: NSViewController {
     // MARK: - Properties
 
     weak var delegate: AddViewControllerDelegate?
-
+    var addMode: AddMode = .append
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setup()
@@ -44,7 +50,7 @@ final class AddViewController: NSViewController {
 
     @IBAction private func addAction(_ sender: Any) {
         guard !keyTextField.stringValue.isEmpty else { return }
-        delegate?.userDidAddTranslation(key: keyTextField.stringValue, message: messageTextField.stringValue.isEmpty ? nil : messageTextField.stringValue)
+        delegate?.userDidAddTranslation(key: keyTextField.stringValue, message: messageTextField.stringValue.isEmpty ? nil : messageTextField.stringValue, addMode: addMode)
     }
 }
 
